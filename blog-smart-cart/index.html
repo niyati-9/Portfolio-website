@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Building an AI-Powered Smart Cart | Niyati Malla</title>
+<meta name="description" content="How real-time object detection with OpenCV and Flask turns an ordinary shopping cart into a self-checkout counter and the tradeoffs I ran into building Smart Cart.">
+<meta name="keywords" content="smart cart, computer vision retail, OpenCV, object detection, contactless checkout, Python Flask project">
+<meta name="author" content="Niyati Malla">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://www.mallaniyati.com.np/blog-smart-cart/">
+<meta name="theme-color" content="#f4f3f1">
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-DY51BXD66W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Niyati Malla">
+<meta property="og:title" content="Building an AI-Powered Smart Cart: What Computer Vision Taught Me About Retail">
+<meta property="og:description" content="How real-time object detection turns an ordinary shopping cart into a self-checkout counter, and the tradeoffs that came with it.">
+<meta property="og:url" content="https://www.mallaniyati.com.np/blog-smart-cart/">
+<meta property="og:image" content="https://www.mallaniyati.com.np/og-image.jpg">
+<meta property="article:published_time" content="2026-03-04">
+<meta property="article:author" content="Niyati Malla">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Building an AI-Powered Smart Cart">
+<meta name="twitter:description" content="How real-time object detection turns an ordinary shopping cart into a self-checkout counter.">
+
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231a1a1a'/%3E%3Ctext x='50' y='68' font-size='58' font-family='Georgia,serif' font-style='italic' fill='%2370f6a7' text-anchor='middle'%3En%3C/text%3E%3C/svg%3E">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Building an AI-Powered Smart Cart: What Computer Vision Taught Me About Retail",
+  "description": "How real-time object detection turns an ordinary shopping cart into a self-checkout counter, and the tradeoffs that came with it.",
+  "author": {
+    "@type": "Person",
+    "name": "Niyati Malla",
+    "url": "https://www.mallaniyati.com.np/",
+    "description": "Kathmandu-based developer and designer building AI-powered apps, computer-vision tools, and mobile products end-to-end.",
+    "sameAs": [
+      "https://www.linkedin.com/in/niyati-malla-804802251/",
+      "https://github.com/niyati-9"
+    ]
+  },
+  "datePublished": "2026-03-04",
+  "dateModified": "2026-07-25",
+  "mainEntityOfPage": "https://www.mallaniyati.com.np/blog-smart-cart/",
+  "publisher": { "@type": "Person", "name": "Niyati Malla" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does Smart Cart work with any grocery store's existing inventory?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Not out of the box. The detector is trained against a specific product catalog, so a real deployment would need retraining on a store's actual product range and packaging, plus a maintained price catalog." }
+    },
+    {
+      "@type": "Question",
+      "name": "How is this different from Amazon's Just Walk Out style systems?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Conceptually similar, but at a different scale. Large grab-and-go systems use many ceiling-mounted cameras and shelf sensors across a store. Smart Cart is a single-camera, cart-level prototype exploring the same idea on modest hardware." }
+    },
+    {
+      "@type": "Question",
+      "name": "What was the biggest technical limitation building Smart Cart?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Occlusion. When items overlap heavily in frame, detection confidence drops in a way that's hard to fully resolve without a second sensing modality like a weight sensor." }
+    }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600&display=swap" media="print" onload="this.media='all'; this.onload=null;">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600&display=swap"></noscript>
+<style>
+  :root{ --bg:#f4f3f1; --ink:#1a1a1a; --ink-soft:#4a4a48; --line:#d9d7d2; --accent:#70f6a7; --accent-soft:#a2eba8; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif; }
+  a{ color:inherit; text-decoration:none; }
+  .eyebrow{ font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); font-weight:500; }
+  .skip-link{ position:absolute; left:-9999px; background:var(--ink); color:var(--bg); padding:10px 16px; z-index:200; font-size:13px; }
+  .skip-link:focus{ left:0; top:0; }
+
+  header{ position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between; padding:28px 48px; background:var(--bg); border-bottom:1px solid var(--line); }
+  .logo{ font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:700; font-size:27px; letter-spacing:-.035em; display:inline-flex; align-items:baseline; gap:2px; }
+  .logo .n-rest{ color:var(--ink-soft); font-weight:600; }
+  nav ul{ display:flex; gap:36px; list-style:none; margin:0; padding:0; }
+  nav a{ font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); }
+  nav a:hover{ color:var(--ink); }
+  .hamburger{ display:none; flex-direction:column; justify-content:center; align-items:center; gap:5px; width:40px; height:40px; background:none; border:none; cursor:pointer; z-index:110; }
+  .hamburger span{ display:block; width:22px; height:1px; background:var(--ink); transition:transform .3s ease, opacity .25s ease; }
+  .hamburger.open span:nth-child(1){ transform:translateY(6px) rotate(45deg); }
+  .hamburger.open span:nth-child(2){ opacity:0; }
+  .hamburger.open span:nth-child(3){ transform:translateY(-6px) rotate(-45deg); }
+  .mobile-nav{ position:fixed; inset:0; z-index:100; background:var(--bg); display:flex; flex-direction:column; justify-content:center; padding:0 32px; opacity:0; visibility:hidden; transition:opacity .3s ease, visibility 0s linear .3s; }
+  .mobile-nav.open{ opacity:1; visibility:visible; transition:opacity .3s ease; }
+  .mobile-nav ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+  .mobile-nav a{ font-family:'Playfair Display',serif; font-style:italic; font-weight:600; font-size:14vw; color:var(--ink); }
+  body.nav-locked{ overflow:hidden; }
+
+  .article-head{ padding: 70px 48px 20px; max-width: 760px; margin: 0 auto; }
+  .back-link{ display:inline-flex; align-items:center; gap:8px; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom: 30px; }
+  .back-link:hover{ color: var(--ink); }
+  .article-head h1{ font-family:'Playfair Display',serif; font-weight:700; font-size: clamp(32px,5.5vw,52px); line-height:1.12; margin: 10px 0 22px; }
+  .article-meta{ display:flex; gap:16px; flex-wrap:wrap; font-size:12.5px; color:var(--ink-soft); border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding: 16px 0; margin-bottom: 8px; }
+
+  article.body{ max-width: 760px; margin: 0 auto; padding: 40px 48px 100px; font-size: 17px; line-height: 1.85; color: #2b2b29; }
+  article.body h2{ font-family:'Playfair Display',serif; font-weight:700; font-size: 27px; margin: 48px 0 16px; line-height:1.3; }
+  article.body p{ margin: 0 0 22px; }
+  article.body ul, article.body ol{ margin: 0 0 22px; padding-left: 22px; }
+  article.body li{ margin-bottom: 10px; }
+  article.body blockquote{ margin: 32px 0; padding: 4px 0 4px 24px; border-left: 3px solid var(--accent); font-family:'Fraunces',serif; font-style:italic; font-size: 19px; color: var(--ink); }
+  article.body code{ background: #ece9e3; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+  .tags{ display:flex; gap:8px; flex-wrap:wrap; margin-top: 40px; }
+  .tags span{ font-size:11px; padding:5px 12px; border-radius:20px; border:1px solid var(--line); color:var(--ink-soft); }
+
+  .sources{ margin-top: 36px; padding-top: 24px; border-top: 1px dashed var(--line); }
+  .sources p{ font-size: 13px; color: var(--ink-soft); margin: 0 0 10px; }
+  .sources ul{ margin: 0; padding-left: 20px; font-size: 13.5px; }
+  .sources li{ margin-bottom: 6px; }
+  .sources a{ text-decoration: underline; text-underline-offset: 2px; color: var(--ink-soft); }
+  .sources a:hover{ color: var(--ink); }
+
+  .faq{ margin-top: 8px; }
+  .faq-item{ border-top: 1px solid var(--line); padding: 22px 0; }
+  .faq-item h3{ font-family:'Playfair Display',serif; font-weight:700; font-size: 18px; margin: 0 0 10px; line-height:1.35; }
+  .faq-item p{ margin:0; font-size:15.5px; color:#2b2b29; }
+
+  .author-box{ margin-top: 56px; padding: 28px; border: 1px solid var(--line); border-radius: 20px; display:flex; gap: 20px; align-items:flex-start; background: var(--bg); }
+  .author-avatar{ flex:0 0 56px; width:56px; height:56px; border-radius:50%; background: linear-gradient(135deg, var(--accent-soft), var(--accent)); display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-weight:700; font-size:19px; color:#1a1a1a; }
+  .author-info p{ margin: 0 0 8px; }
+  .author-name{ font-family:'Playfair Display',serif; font-weight:700; font-size: 16px; }
+  .author-bio{ font-size: 14px; line-height:1.65; color: var(--ink-soft); }
+  .author-links{ display:flex; gap: 14px; margin-top: 6px; }
+  .author-links a{ font-size: 12.5px; text-decoration: underline; text-underline-offset: 2px; color: var(--ink-soft); }
+  .author-links a:hover{ color: var(--ink); }
+  .fact-check{ font-size: 12px; color: var(--ink-soft); margin-top: 10px; }
+
+  .related{ border-top:1px solid var(--line); padding: 70px 48px 100px; max-width: 1100px; margin:0 auto; }
+  .related h3{ font-family:'Fraunces',serif; font-style:italic; font-weight:600; font-size: 28px; margin: 0 0 28px; }
+  .related-grid{ display:grid; grid-template-columns: repeat(2,1fr); gap: 24px; }
+  .related-card{ border:1px solid var(--line); border-radius:18px; padding:24px; transition: border-color .3s ease, transform .3s ease; }
+  .related-card:hover{ border-color: var(--ink); transform: translateY(-4px); }
+  .related-card .eyebrow{ margin-bottom: 8px; }
+  .related-card h4{ font-family:'Playfair Display',serif; font-size:18px; margin:0; line-height:1.35; }
+
+  .cta{ border-top:1px solid var(--line); padding: 70px 48px; text-align:center; }
+  .cta h2{ font-family:'Fraunces',serif; font-style:italic; font-weight:600; font-size: clamp(28px,4vw,42px); margin: 8px 0 24px; }
+  .cta a.btn{ font-family:'Playfair Display',serif; font-style:italic; font-size:16px; border-bottom:1px solid var(--ink); padding-bottom:3px; }
+
+  footer.copyright{ text-align:center; padding: 30px 0 40px; font-size:11px; letter-spacing:.1em; color:var(--ink-soft); border-top:1px solid var(--line); }
+  footer.copyright a{ text-decoration:underline; text-underline-offset:3px; }
+
+  @media (max-width:900px){
+    nav{ display:none; } .hamburger{ display:flex; }
+    header{ padding:18px 20px; }
+    .article-head{ padding: 48px 20px 12px; }
+    article.body{ padding: 32px 20px 72px; font-size:16px; }
+    .related{ padding: 48px 20px 72px; }
+    .related-grid{ grid-template-columns: 1fr; }
+    .cta{ padding: 48px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header id="siteHeader">
+  <a href="/" class="logo" aria-label="Niyati Malla, home"><span>niyati</span><span class="n-rest">malla</span></a>
+  <nav aria-label="Primary">
+    <ul>
+      <li><a href="/#work">(My Work)</a></li>
+      <li><a href="/#about">(About Me)</a></li>
+      <li><a href="/blog/">(Blog)</a></li>
+      <li><a href="/#contact">(Let's Talk)</a></li>
+    </ul>
+  </nav>
+  <button class="hamburger" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" aria-controls="mobileNav">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+
+<nav class="mobile-nav" id="mobileNav" aria-label="Mobile">
+  <ul>
+    <li><a href="/#work">Work</a></li>
+    <li><a href="/#about">About</a></li>
+    <li><a href="/blog/">Blog</a></li>
+    <li><a href="/#contact">Connect</a></li>
+  </ul>
+</nav>
+
+<main id="main">
+<div class="article-head">
+  <a href="/blog/" class="back-link">← Back to blog</a>
+  <p class="eyebrow">Computer Vision</p>
+  <h1>Building an AI-Powered Smart Cart: What Computer Vision Taught Me About Retail</h1>
+  <div class="article-meta">
+    <span>Niyati Malla</span><span>·</span><span>March 4, 2026</span><span>·</span><span>6 min read</span>
+  </div>
+</div>
+
+<article class="body">
+  <p>Smart Cart started as a simple question: what if the checkout counter moved into the cart itself? Instead of unloading a basket onto a belt and waiting for someone to scan every item, the cart would already know what was inside it the moment an item went in.</p>
+
+  <p>The project uses a camera mounted on the cart, a lightweight object-detection model, and a running total that updates the instant a product crosses into frame. Under the hood it's Python, OpenCV for the vision pipeline, and Flask serving a simple interface that shows the live bill. No barcode scanning, no waiting in line just walk up, drop items in, and check the total on a screen.</p>
+
+  <h2>Why object detection instead of barcodes</h2>
+  <p>Barcode scanning is reliable, but it puts all the work on the shopper every item has to be individually presented to a scanner. The goal here was the opposite: let the system do the noticing. That meant training and tuning a detector that could recognize common grocery items from different angles, under cart-level lighting, in a single frame that might contain more than one product at once.</p>
+
+  <p>Getting this right meant accepting a few real constraints early on:</p>
+  <ul>
+    <li><strong>Lighting is inconsistent.</strong> A cart moves through bright aisles and dim corners of a store, so the model needed training data that reflected that variation rather than a clean studio dataset.</li>
+    <li><strong>Occlusion is constant.</strong> Items overlap, stack, and get partially hidden by other items or a hand reaching in. The detector has to be confident enough to count things it can only partly see.</li>
+    <li><strong>Speed matters more than perfect accuracy.</strong> A shopper won't wait three seconds for a frame to process. The pipeline had to run close to real time on modest hardware.</li>
+  </ul>
+
+  <h2>What the pipeline actually does</h2>
+  <p>Each frame from the cart's camera is passed through the detection model, which returns bounding boxes and class labels for anything it recognizes. Those detections get matched against a small product catalog with prices, and the running bill updates live. A basic tracking layer prevents the same item from being counted twice as it settles into the cart.</p>
+
+  <blockquote>The interesting engineering problem wasn't "can the model see the item" it was "how do we know it's a new item and not the same can rolling into view again."</blockquote>
+
+  <p>That tracking logic ended up being just as important as the detection accuracy itself. Without it, every shake of the cart risked inflating the total.</p>
+
+  <h2>Where it fell short and what that taught me</h2>
+  <p>Smart Cart is a prototype, not a finished retail product, and it's honest about that. Packaged goods with clear, distinct shapes detect well. Loose produce, near-identical packaging, and items stacked directly on top of each other are still the hardest cases the same problems that make self-checkout kiosks frustrating in the real world.</p>
+
+  <p>That's the biggest lesson from building it: computer vision projects rarely fail on the "does the model work" question in isolation. They succeed or fail on the edge cases — the half-hidden item, the bad lighting, the shopper who tosses a bag of chips in at an angle. Designing for those cases, not just the clean demo case, is most of the actual work.</p>
+
+  <h2>Where this could go next</h2>
+  <p>A few directions I'd explore if I kept building this out: weight sensors as a second signal to cross-check vision-based counts, a mobile app so shoppers can review their live cart on their own phone, and a feedback loop where corrected items get folded back into training data over time.</p>
+
+  <h2>How I actually tested it</h2>
+  <p>I didn't rely on a single clean dataset to judge whether this worked. I ran the cart through three conditions on purpose: a well-lit setup similar to a demo booth, a dimmer "back corner of the store" setup, and a deliberately cluttered cart with items stacked and overlapping. Detection confidence in the first case was consistently strong; in the cluttered case, it dropped noticeably whenever two items shared more than roughly half their visible surface. That gap between the best-case and worst-case results is the number that actually matters for a project like this a demo reel only shows the best case, and it would have been easy to stop testing there.</p>
+
+  <p>I also timed the pipeline end to end, from frame capture to updated bill, because a system that's accurate but slow doesn't actually solve the checkout problem it's meant to solve. Keeping the detection step lightweight enough to run close to real time on ordinary hardware, rather than reaching for the largest available model, was a deliberate tradeoff a marginally more accurate model that lags behind the shopper's hand isn't actually more useful.</p>
+
+  <h2>The stack, and why each piece earned its place</h2>
+  <p>OpenCV handles the lower-level image work frame capture, preprocessing, and drawing the bounding boxes used during debugging. Python was the natural choice for gluing the detection model to the billing logic, since most computer vision tooling is Python-first and the ecosystem for both machine learning and simple web serving overlaps heavily there. Flask, rather than a heavier framework, was enough to expose a live bill to a browser without adding infrastructure the project didn't need. None of these choices are exotic the interesting engineering happened in how the pieces were wired together, not in picking unusual tools.</p>
+
+  <h2>Frequently asked questions</h2>
+  <div class="faq">
+    <div class="faq-item">
+      <h3>Does Smart Cart work with any grocery store's existing inventory?</h3>
+      <p>Not out of the box. The detector is trained against a specific product catalog, so a real deployment would need retraining or fine-tuning on a store's actual product range and packaging, plus a maintained catalog of prices to match detections against.</p>
+    </div>
+    <div class="faq-item">
+      <h3>How is this different from Amazon's "Just Walk Out" style systems?</h3>
+      <p>Conceptually similar in spirit using computer vision instead of manual scanning but at a completely different scale. Large "grab and go" systems typically use dozens of ceiling-mounted cameras and shelf-level sensors across a whole store. Smart Cart is a single-camera, cart-level prototype built to explore the same core problem on far more modest hardware.</p>
+    </div>
+    <div class="faq-item">
+      <h3>What was the biggest technical limitation?</h3>
+      <p>Occlusion. When two items overlap heavily in the frame, detection confidence drops in a way that's hard to fully engineer around without adding a second sensing modality, like a weight sensor, to confirm what the camera alone can't resolve.</p>
+    </div>
+  </div>
+
+  <p>You can look through the code on <a href="https://github.com/nischalp001/smart_cart" target="_blank" rel="noopener noreferrer">GitHub</a> it's a good starting point if you're curious how a real-time detection-to-billing pipeline is wired together end to end.</p>
+
+  <div class="tags">
+    <span>Python</span><span>OpenCV</span><span>Computer Vision</span><span>Flask</span><span>Retail Tech</span>
+  </div>
+
+  <div class="sources">
+    <p>Further reading &amp; references:</p>
+    <ul>
+      <li><a href="https://docs.opencv.org/4.x/" target="_blank" rel="noopener noreferrer">OpenCV official documentation</a></li>
+      <li><a href="https://flask.palletsprojects.com/" target="_blank" rel="noopener noreferrer">Flask documentation</a></li>
+    </ul>
+  </div>
+
+  <div class="author-box">
+    <div class="author-avatar">NM</div>
+    <div class="author-info">
+      <p class="author-name">Written by Niyati Malla</p>
+      <p class="author-bio">Niyati is a Kathmandu-based developer and designer who builds computer-vision, web, and mobile products end-to-end from model to interface. Smart Cart is one of several hands-on OpenCV and Python projects she's built and documented; she also maintains a facial-recognition attendance system and a React Native app for roadside assistance in Nepal.</p>
+      <div class="author-links">
+        <a href="https://github.com/niyati-9" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://www.linkedin.com/in/niyati-malla-804802251/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        <a href="/#contact">Contact</a>
+      </div>
+      <p class="fact-check">Published March 4, 2026. Based on hands-on testing of the project described; code and results are publicly available on GitHub for verification.</p>
+    </div>
+  </div>
+</article>
+
+<section class="related" aria-labelledby="related-heading">
+  <h3 id="related-heading">Read next</h3>
+  <div class="related-grid">
+    <a href="/blog-facial-attendance/" class="related-card">
+      <p class="eyebrow">Computer Vision</p>
+      <h4>Facial Recognition Attendance: Convenience, Accuracy, and Privacy in the Same System</h4>
+    </a>
+    <a href="/blog-mechanic-sathi/" class="related-card">
+      <p class="eyebrow">Mobile</p>
+      <h4>Designing Mechanic Sathi: Solving Roadside Emergencies for Travelers in Nepal</h4>
+    </a>
+  </div>
+</section>
+
+<section class="cta">
+  <p class="eyebrow">(have a project in mind)</p>
+  <h2>Let's build something together.</h2>
+  <a href="/#contact" class="btn">Get in touch ↗︎</a>
+</section>
+</main>
+
+<footer class="copyright">(© 2026 NIYATI MALLA) · <a href="/">Home</a> · <a href="/blog/">Blog</a></footer>
+
+<script>
+  const hamburgerBtn = document.getElementById('hamburgerBtn');
+  const mobileNav = document.getElementById('mobileNav');
+  hamburgerBtn.addEventListener('click', () => {
+    const isOpen = hamburgerBtn.classList.toggle('open');
+    hamburgerBtn.setAttribute('aria-expanded', String(isOpen));
+    mobileNav.classList.toggle('open', isOpen);
+    document.body.classList.toggle('nav-locked', isOpen);
+  });
+  mobileNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+    hamburgerBtn.classList.remove('open');
+    mobileNav.classList.remove('open');
+    document.body.classList.remove('nav-locked');
+  }));
+</script>
+
+</body>
+</html>
