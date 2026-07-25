@@ -1,67 +1,991 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Niyati Malla</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-  <style>
-    .full-height {
-      height: 100vh; 
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- ================= SEO: core meta ================= -->
+<title>Niyati Malla</title>
+<meta name="description" content="Niyati Malla is a Kathmandu-based developer and designer building AI-powered apps, computer-vision tools, and clean web & mobile products end-to-end — from database schema to pixel-perfect UI.">
+<meta name="keywords" content="Niyati Malla, creative developer Nepal, digital designer Kathmandu, computer vision developer, React Native developer Nepal, Django developer, full stack developer Kathmandu, portfolio">
+<meta name="author" content="Niyati Malla">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://www.mallaniyati.com.np/">
+<meta name="theme-color" content="#f4f3f1">
+
+<!-- ================= SEO: Open Graph / social ================= -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Niyati Malla">
+<meta property="og:title" content="Niyati Malla | Creative Digital Designer & Developer">
+<meta property="og:description" content="Kathmandu-based developer & designer building AI-powered apps, computer-vision tools, and clean web & mobile products end-to-end.">
+<meta property="og:url" content="https://www.mallaniyati.com.np/">
+<meta property="og:image" content="https://www.mallaniyati.com.np/og-image.jpg">
+<meta property="og:locale" content="en_US">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Niyati Malla | Creative Digital Designer & Developer">
+<meta name="twitter:description" content="Kathmandu-based developer & designer building AI-powered apps, computer-vision tools, and clean web & mobile products end-to-end.">
+<meta name="twitter:image" content="https://www.mallaniyati.com.np/og-image.jpg">
+
+<!-- Favicon (inline, no external file needed) -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231a1a1a'/%3E%3Ctext x='50' y='68' font-size='58' font-family='Georgia,serif' font-style='italic' fill='%2370f6a7' text-anchor='middle'%3En%3C/text%3E%3C/svg%3E">
+
+<!-- ================= SEO: structured data ================= -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Niyati Malla",
+  "jobTitle": "Creative Digital Designer & Developer",
+  "description": "Kathmandu-based developer and designer with hands-on experience building AI-powered apps, computer-vision systems, and full-stack web and mobile products end-to-end.",
+  "url": "https://www.mallaniyati.com.np/",
+  "email": "mailto:mallaniyati19@gmail.com",
+  "sameAs": [
+    "https://www.linkedin.com/in/niyati-malla-804802251/",
+    "https://github.com/niyati-9"
+  ],
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Kathmandu",
+    "addressCountry": "NP"
+  },
+  "knowsAbout": ["Computer Vision", "React Native", "Django", "Next.js", "Product Design", "Web Development"]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Niyati Malla",
+  "url": "https://www.mallaniyati.com.np/"
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #f4f3f1;
+    --bg-alt: #efeeeb;
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a48;
+    --line: #d9d7d2;
+    --accent: #70f6a7;
+    --accent-soft: #a2eba8;
+  }
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+  }
+  a{ color: inherit; text-decoration:none; }
+  .eyebrow{
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+  .display{ font-family: 'Playfair Display', serif; }
+  .script{ font-family: 'Fraunces', serif; font-style: italic; }
+
+  .skip-link{
+    position:absolute; left:-9999px; top:auto;
+    background: var(--ink); color: var(--bg); padding: 10px 16px;
+    z-index: 200; font-size: 13px; border-radius: 0 0 8px 0;
+  }
+  .skip-link:focus{ left:0; top:0; }
+
+  /* ---------- NAV ---------- */
+  header{
+    position: sticky; top:0; z-index: 50;
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 28px 48px;
+    background: var(--bg);
+    border-bottom: 1px solid transparent;
+    transition: border-color .4s ease, background .4s ease;
+  }
+  header.scrolled{ border-color: var(--line); background: rgba(244,243,241,0.85); backdrop-filter: blur(8px); }
+
+  .logo{
+    font-family:'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight:700;
+    font-size: 27px;
+    letter-spacing: -0.035em;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 2px;
+    position: relative;
+  }
+  .logo .n-first{ font-style: normal; font-weight: 700; }
+  .logo .n-rest{ color: var(--ink-soft); font-weight: 600; }
+  .logo .mark{
+    font-style: normal;
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    width: 18px; height: 18px;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-left: 8px;
+    transform: translateY(-6px);
+    letter-spacing: 0;
+  }
+
+  nav ul{ display:flex; gap: 36px; list-style:none; margin:0; padding:0; }
+  nav a{
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft);
+    position: relative; padding-bottom: 2px;
+  }
+  nav a::after{
+    content:''; position:absolute; left:0; bottom:-2px; width:0; height:1px; background: var(--ink);
+    transition: width .3s ease;
+  }
+  nav a:hover::after{ width:100%; }
+  nav a:hover{ color: var(--ink); }
+
+  /* ---------- HAMBURGER (mobile) ---------- */
+  .hamburger{
+    display:none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 40px; height: 40px;
+    background: none; border: none; cursor: pointer;
+    z-index: 110;
+    padding: 0;
+  }
+  .hamburger span{
+    display:block; width: 22px; height: 1px; background: var(--ink);
+    transition: transform .35s ease, opacity .25s ease, width .3s ease;
+  }
+  .hamburger:hover span{ width: 26px; }
+  .hamburger.open span:nth-child(1){ transform: translateY(6px) rotate(45deg); }
+  .hamburger.open span:nth-child(2){ opacity: 0; }
+  .hamburger.open span:nth-child(3){ transform: translateY(-6px) rotate(-45deg); }
+
+  .mobile-nav{
+    position: fixed; inset: 0; z-index: 100;
+    background: var(--bg);
+    display:flex; flex-direction: column;
+    justify-content: center; align-items: flex-start;
+    padding: 0 32px;
+    opacity: 0; visibility: hidden;
+    transform: translateY(-12px);
+    transition: opacity .4s ease, transform .4s ease, visibility 0s linear .4s;
+  }
+  .mobile-nav.open{
+    opacity: 1; visibility: visible; transform: translateY(0);
+    transition: opacity .4s ease, transform .4s ease, visibility 0s linear 0s;
+  }
+  .mobile-nav::before{
+    content:'';
+    position:absolute; left:50%; top:-140px; transform: translateX(-50%);
+    width: 640px; height: 260px;
+    background: radial-gradient(ellipse at center, var(--accent) 0%, var(--accent-soft) 40%, rgba(226,73,47,0) 72%);
+    filter: blur(30px); opacity:.5; pointer-events:none;
+  }
+  .mobile-nav ul{
+    list-style:none; margin:0; padding:0; position: relative; z-index:2;
+    display:flex; flex-direction: column; gap: 6px;
+  }
+  .mobile-nav li{ overflow: hidden; }
+  .mobile-nav a{
+    font-family:'Playfair Display', serif; font-style: italic; font-weight:600;
+    font-size: 15vw;
+    line-height: 1.14;
+    display:inline-block;
+    color: var(--ink);
+    transform: translateY(110%);
+    transition: transform .5s cubic-bezier(.22,1,.36,1);
+  }
+  .mobile-nav.open a{ transform: translateY(0); }
+  .mobile-nav.open li:nth-child(1) a{ transition-delay: .08s; }
+  .mobile-nav.open li:nth-child(2) a{ transition-delay: .15s; }
+  .mobile-nav.open li:nth-child(3) a{ transition-delay: .22s; }
+  .mobile-nav.open li:nth-child(4) a{ transition-delay: .29s; }
+  .mobile-nav-foot{
+    position: relative; z-index:2;
+    margin-top: 40px;
+    font-size: 12px; color: var(--ink-soft); letter-spacing: .08em;
+  }
+  .mobile-nav-foot a{ color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; }
+  body.nav-locked{ overflow: hidden; }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position: relative;
+    padding: 90px 48px 60px;
+    text-align: center;
+    overflow: hidden;
+  }
+  .hero h1{
+    font-family:'Playfair Display', serif;
+    font-weight: 600;
+    font-size: clamp(48px, 9vw, 118px);
+    line-height: 0.98;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .hero h1 .i{ font-style: italic; font-weight: 500; }
+  .hero .scroll-note{
+    margin-top: 28px;
+    font-size: 11px; letter-spacing: .15em; text-transform: uppercase; color: var(--ink-soft);
+    display:inline-flex; align-items:center; gap:8px;
+  }
+  .scroll-note::before, .scroll-note::after{ content:''; width:24px; height:1px; background: var(--line); }
+  .blob{
+    position:absolute; left:50%; bottom:-120px; transform: translateX(-50%);
+    width: 900px; height: 260px;
+    background: radial-gradient(ellipse at center, var(--accent) 0%, var(--accent-soft) 40%, rgba(226,73,47,0) 72%);
+    filter: blur(20px);
+    opacity: .85;
+    animation: pulse 6s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes pulse{
+    0%, 100%{ opacity: .75; transform: translateX(-50%) scale(1); }
+    50%{ opacity: 1; transform: translateX(-50%) scale(1.06); }
+  }
+  .deco{ position:absolute; color: var(--ink-soft); opacity:.5; font-size:16px; }
+  .deco.d1{ top: 80px; left: 8%; }
+  .deco.d2{ top: 60px; right: 10%; font-size:20px; }
+  .deco.d3{ bottom: 120px; left: 12%; }
+  .deco.d4{ bottom: 100px; right: 10%; }
+
+  .reveal{ opacity:0; transform: translateY(28px); transition: opacity .8s ease, transform .8s ease; }
+  .reveal.in{ opacity:1; transform: translateY(0); }
+
+  /* ---------- PROJECTS ---------- */
+  .projects-wrap{ border-top:1px solid var(--line); padding-top: 100px; }
+  .projects-side{
+    padding: 0 48px;
+    margin-bottom: 44px;
+    display:flex; flex-direction: column;
+  }
+  .projects-side h2{
+    font-family:'Fraunces', serif; font-style: italic; font-weight:600;
+    font-size: clamp(38px, 5vw, 58px);
+    line-height: 1.05; margin: 18px 0 14px;
+  }
+  .projects-side .eyebrow{ margin-bottom: 4px; }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+
+  /* ---------- WORK HEADER + NAV ARROWS ---------- */
+  .work-head{
+    display:flex; align-items:flex-end; justify-content:space-between; gap: 40px;
+    flex-wrap: wrap; padding: 0 48px 44px;
+  }
+  .work-nav{ display:flex; gap: 12px; }
+  .work-nav button{
+    width: 50px; height: 50px; border-radius: 50%; border: 1px solid var(--line);
+    background: var(--bg); cursor: pointer; font-size: 16px; color: var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    transition: background .3s ease, color .3s ease, border-color .3s ease, transform .3s ease;
+  }
+  .work-nav button:hover{ background: var(--ink); color: var(--bg); border-color: var(--ink); transform: scale(1.07); }
+  .work-nav button:disabled{ opacity: .3; cursor: default; }
+  .work-nav button:disabled:hover{ background: var(--bg); color: var(--ink); border-color: var(--line); transform: none; }
+
+  /* ---------- PROJECT CARD CAROUSEL ---------- */
+  .projects-carousel{
+    display:flex; gap: 28px; overflow-x:auto;
+    padding: 4px 48px 64px; cursor: grab;
+    scrollbar-width: none;
+  }
+  .projects-carousel::-webkit-scrollbar{ display:none; }
+  .projects-carousel.dragging{ cursor: grabbing; scroll-behavior: auto; }
+
+  .project-card{
+    flex: 0 0 clamp(270px, 30vw, 355px);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    overflow: hidden;
+    display:flex; flex-direction:column;
+    transition: transform .5s cubic-bezier(.22,1,.36,1), box-shadow .5s ease, border-color .4s ease;
+    position: relative;
+  }
+  .project-card:hover{
+    transform: translateY(-10px);
+    box-shadow: 0 34px 60px -24px rgba(0,0,0,.22);
+    border-color: var(--ink);
+  }
+
+  .card-visual{
+    height: 208px; position: relative; overflow: hidden;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .card-visual .glow{
+    position:absolute; width: 240px; height: 240px; border-radius: 50%;
+    filter: blur(46px); opacity: .55; transition: transform .6s ease, opacity .6s ease;
+  }
+  .project-card:hover .card-visual .glow{ opacity: .8; transform: scale(1.15); }
+  .card-visual .glyph{
+    font-family:'Playfair Display', serif; font-size: 110px; line-height:1;
+    position: relative; z-index: 2; user-select:none; pointer-events:none;
+    transition: transform .7s cubic-bezier(.22,1,.36,1);
+  }
+  .project-card:hover .card-visual .glyph{ transform: scale(1.14) rotate(10deg); }
+  .card-visual .dot{
+    position:absolute; border-radius:50%; opacity:.5;
+    animation: floaty 5s ease-in-out infinite;
+  }
+  @keyframes floaty{
+    0%, 100%{ transform: translateY(0); }
+    50%{ transform: translateY(-8px); }
+  }
+  .card-num{
+    position:absolute; top:16px; left:18px; z-index:3;
+    font-family:'Playfair Display', serif; font-style: italic; font-size: 12.5px;
+    letter-spacing:.04em;
+  }
+
+  .cv-dark{ background: linear-gradient(155deg, #1f1f1d 0%, #141412 100%); }
+  .cv-dark .glow{ background: radial-gradient(circle, var(--accent) 0%, transparent 72%); }
+  .cv-dark .glyph{ color: rgba(112,246,167,.5); }
+  .cv-dark .card-num{ color: rgba(255,255,255,.75); }
+
+  .cv-mint{ background: linear-gradient(155deg, var(--accent-soft) 0%, var(--accent) 100%); }
+  .cv-mint .glow{ background: radial-gradient(circle, #ffffff 0%, transparent 70%); opacity:.35; }
+  .cv-mint .glyph{ color: rgba(26,26,26,.16); }
+  .cv-mint .card-num{ color: rgba(26,26,26,.6); }
+
+  .cv-cream{ background: linear-gradient(155deg, #ece7de 0%, #dcd4c4 100%); }
+  .cv-cream .glow{ background: radial-gradient(circle, var(--accent) 0%, transparent 72%); opacity:.4; }
+  .cv-cream .glyph{ color: rgba(26,26,26,.14); }
+  .cv-cream .card-num{ color: rgba(26,26,26,.55); }
+
+  .cv-charcoal{ background: linear-gradient(155deg, #2a2f2b 0%, #171a17 100%); }
+  .cv-charcoal .glow{ background: radial-gradient(circle, var(--accent-soft) 0%, transparent 72%); }
+  .cv-charcoal .glyph{ color: rgba(162,235,168,.45); }
+  .cv-charcoal .card-num{ color: rgba(255,255,255,.75); }
+
+  .cv-sand{ background: linear-gradient(155deg, #d9d2c2 0%, #c7bda6 100%); }
+  .cv-sand .glow{ background: radial-gradient(circle, #ffffff 0%, transparent 72%); opacity:.5; }
+  .cv-sand .glyph{ color: rgba(26,26,26,.15); }
+  .cv-sand .card-num{ color: rgba(26,26,26,.55); }
+
+  .card-body{ padding: 24px 26px 28px; display:flex; flex-direction:column; gap: 13px; flex:1; }
+  .card-eyebrow{ font-size: 10.5px; letter-spacing:.12em; text-transform:uppercase; color: var(--ink-soft); font-weight: 600; }
+  .card-title{ font-family:'Playfair Display', serif; font-weight:700; font-size: 21px; margin:0; line-height:1.25; }
+  .card-desc{ font-size: 13.5px; line-height: 1.62; color: var(--ink-soft); margin:0; flex:1; }
+  .card-tech{ display:flex; flex-wrap:wrap; gap: 8px; }
+  .card-tech span{
+    font-size: 11px; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--line);
+    color: var(--ink-soft); transition: border-color .3s ease, color .3s ease;
+  }
+  .project-card:hover .card-tech span{ border-color: var(--ink); color: var(--ink); }
+  .card-view{
+    margin-top: 2px; display:inline-flex; align-items:center; gap: 8px; width:fit-content;
+    font-family:'Playfair Display', serif; font-style: italic; font-size: 15px;
+    border-bottom: 1px solid transparent; padding-bottom: 2px;
+    transition: border-color .3s ease, gap .3s ease;
+  }
+  .card-view::after{ content:'↗'; font-family:'Inter', sans-serif; font-style: normal; font-size: 13px; transition: transform .3s ease; }
+  .card-view:hover{ border-color: var(--ink); gap: 12px; }
+  .card-view:hover::after{ transform: translate(2px,-2px); }
+
+  /* ---------- ABOUT ---------- */
+  .about{ display:flex; border-top:1px solid var(--line); }
+  .about-col{ flex:1; padding: 100px 48px; }
+  .about-col:first-child{ border-right: 1px solid var(--line); }
+  .about h2{
+    font-family:'Playfair Display', serif; font-weight:700; font-size: clamp(40px,5vw,64px); margin: 14px 0 0;
+    line-height: 1.05;
+  }
+  .about-col p{ font-size: 15px; line-height: 1.7; color: var(--ink-soft); max-width: 440px; }
+  .spin-mark{ display:inline-block; animation: spin 4s linear infinite; margin-bottom: 24px; font-size: 20px; }
+
+  /* ---------- BLOG PREVIEW ---------- */
+  .blog-wrap{ border-top:1px solid var(--line); padding: 100px 48px 110px; }
+  .blog-head{
+    display:flex; align-items:flex-end; justify-content:space-between; gap: 40px;
+    flex-wrap: wrap; margin-bottom: 44px;
+  }
+  .blog-head h2{
+    font-family:'Fraunces', serif; font-style: italic; font-weight:600;
+    font-size: clamp(38px, 5vw, 58px); line-height: 1.05; margin: 18px 0 14px;
+  }
+  .view-all{
+    font-family:'Playfair Display', serif; font-style: italic; font-size: 15px;
+    display:inline-flex; align-items:center; gap: 8px;
+    border-bottom: 1px solid transparent; padding-bottom: 2px;
+    transition: border-color .3s ease, gap .3s ease; flex-shrink:0;
+  }
+  .view-all::after{ content:'↗'; font-family:'Inter', sans-serif; font-style: normal; font-size: 13px; transition: transform .3s ease; }
+  .view-all:hover{ border-color: var(--ink); gap: 12px; }
+  .view-all:hover::after{ transform: translate(2px,-2px); }
+  .blog-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  .blog-card{
+    border: 1px solid var(--line); border-radius: 22px; padding: 30px 28px 28px;
+    display:flex; flex-direction:column; gap: 14px; background: var(--bg);
+    transition: transform .5s cubic-bezier(.22,1,.36,1), box-shadow .5s ease, border-color .4s ease;
+  }
+  .blog-card:hover{ transform: translateY(-8px); box-shadow: 0 30px 54px -24px rgba(0,0,0,.18); border-color: var(--ink); }
+  .blog-meta{ display:flex; gap: 12px; font-size: 10.5px; letter-spacing:.1em; text-transform:uppercase; color: var(--ink-soft); font-weight: 600; }
+  .blog-card h3{ font-family:'Playfair Display', serif; font-weight:700; font-size: 20px; margin:0; line-height:1.32; }
+  .blog-card p{ font-size: 13.5px; line-height: 1.62; color: var(--ink-soft); margin:0; flex:1; }
+
+  /* ---------- CONTACT ---------- */
+  .contact{
+    border-top: 1px solid var(--line);
+    padding: 110px 48px 60px;
+    position: relative; overflow:hidden; text-align:center;
+  }
+  .contact h2{
+    font-family:'Fraunces', serif; font-style: italic; font-weight:600;
+    font-size: clamp(40px, 7vw, 80px); line-height: 1.05; margin: 16px 0 90px; position: relative; z-index:2;
+  }
+  .contact-grid{ display:flex; gap: 80px; text-align:left; max-width: 1100px; margin: 0 auto; position:relative; z-index:2; }
+  .social h3{ font-family:'Playfair Display', serif; font-size: 22px; margin: 0 0 20px; }
+  .social ul{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; }
+  .social a{ font-size: 14px; color: var(--ink-soft); transition: color .2s ease; display:inline-flex; align-items:center; gap:10px; }
+  .social a:hover{ color: var(--ink); }
+  .social-icon{ width:18px; height:18px; fill:currentColor; flex:0 0 18px; }
+  .form{ flex:1; }
+  .field{ margin-bottom: 26px; }
+  .field label{ font-size: 12px; color: var(--ink-soft); display:block; margin-bottom: 6px; }
+  .field input, .field textarea{
+    width:100%; border:none; border-bottom: 1px solid var(--line); background: transparent;
+    font-family:'Inter',sans-serif; font-size: 15px; padding: 6px 0; color: var(--ink); outline:none;
+    transition: border-color .3s ease;
+  }
+  .field input:focus, .field textarea:focus{ border-color: var(--ink); }
+  .field textarea{ resize:none; height: 50px; }
+  .submit-row{ display:flex; justify-content:flex-end; align-items:center; gap: 16px; }
+  .submit-btn{
+    font-family:'Playfair Display', serif; font-style: italic; font-size: 18px; background:none; border:none;
+    cursor:pointer; display:flex; align-items:center; gap:8px; color: var(--ink);
+  }
+  .submit-btn:disabled{ opacity: .5; cursor: default; }
+  .submit-btn:hover .plus{ transform: rotate(90deg); }
+  .plus{ display:inline-block; transition: transform .3s ease; }
+  .form-status{ font-size: 12px; color: var(--ink-soft); }
+  .form-status.error{ color: #b3261e; }
+  .contact-email{ margin-top: 60px; font-family:'Playfair Display', serif; font-size: 20px; position:relative; z-index:2; word-break: break-word; }
+  .contact .blob{ bottom: -180px; opacity:.7; }
+  footer.copyright{ text-align:center; padding: 30px 0 40px; font-size: 11px; letter-spacing:.1em; color: var(--ink-soft); position:relative; z-index:2; }
+  footer.copyright a{ text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 900px){
+    nav{ display: none; }
+    .hamburger{ display: flex; }
+
+    header{ padding: 18px 20px; }
+    .logo{ font-size: 22px; }
+    .logo .mark{ width:16px; height:16px; font-size:8px; margin-left:6px; transform: translateY(-5px); }
+
+    .hero{ padding: 56px 20px 44px; }
+    .hero h1{ font-size: clamp(40px, 12vw, 72px); line-height: 1.03; }
+    .hero .scroll-note{ margin-top: 22px; }
+    .hero .deco{ display: none; }
+    .blob{ width: 480px; height: 170px; bottom: -90px; }
+
+    .projects-wrap{ padding-top: 56px; }
+    .projects-side{ padding: 0 20px; margin-bottom: 30px; }
+    .projects-side h2{ font-size: clamp(32px, 10vw, 46px); }
+    .work-head{ padding: 0 20px 28px; gap: 20px; }
+    .work-nav{ display: none; }
+    .projects-carousel{ padding: 4px 20px 48px; gap: 18px; }
+    .project-card{ flex-basis: 78vw; }
+    .card-visual{ height: 172px; }
+    .card-visual .glyph{ font-size: 84px; }
+    .card-body{ padding: 20px 20px 22px; }
+    .card-title{ font-size: 19px; }
+
+    .about{ flex-direction: column; }
+    .about-col{ border-right:none !important; border-bottom: 1px solid var(--line); padding: 48px 20px; }
+    .about h2{ font-size: clamp(32px, 10vw, 48px); }
+
+    .blog-wrap{ padding: 56px 20px 72px; }
+    .blog-head{ margin-bottom: 30px; }
+    .blog-grid{ grid-template-columns: 1fr; gap: 18px; }
+
+    .contact{ padding: 64px 20px 40px; }
+    .contact h2{ margin-bottom: 48px; }
+    .contact .deco{ display: none; }
+    .contact .blob{ width: 460px; height: 200px; bottom: -140px; }
+    .contact-grid{ flex-direction: column; gap: 44px; }
+    .contact-grid .form{ order: 1; }
+    .contact-grid .social{ order: 2; padding-top: 24px; border-top: 1px solid var(--line); text-align: center; }
+    .social h3{ font-size: 19px; margin-bottom: 18px; }
+    .social ul{ flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 12px; }
+    .social a{
+      border: 1px solid var(--line); border-radius: 30px; padding: 12px 20px;
+      font-size: 13px; font-weight: 500; gap: 9px;
+      transition: border-color .3s ease, background .3s ease, transform .2s ease;
     }
-  </style>
+    .social a:active{ transform: scale(.97); }
+    .social a:hover{ border-color: var(--ink); background: var(--bg-alt); }
+    .contact-email{ font-size: 16px; margin-top: 44px; }
+    .field{ margin-bottom: 22px; }
+  }
+
+  @media (max-width: 480px){
+    .mobile-nav a{ font-size: 13vw; }
+    header{ padding: 16px 18px; }
+    .logo{ font-size: 19px; }
+    .hero{ padding: 48px 18px 40px; }
+    .project-card{ flex-basis: 82vw; }
+    .card-title{ font-size: 18px; }
+    .about-col{ padding: 40px 18px; }
+    .contact{ padding: 56px 18px 36px; }
+    .social ul{ flex-direction: column; align-items: stretch; }
+    .social a{ justify-content: center; padding: 13px 20px; }
+  }
+
+  @media (max-width: 360px){
+    .project-card{ flex-basis: 86vw; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation: none !important; transition: none !important; }
+  }
+</style>
 </head>
-<body class="bg-gray-200 font-sans flex flex-col min-h-screen">
-  
-  <header class="bg-gray-700 text-white py-10">
-    <div class="container mx-auto text-center">
-      <h1 class="text-5xl md:text-6xl font-bold">Niyati Malla</h1>
-      <p class="text-xl md:text-2xl mt-4">Information Technology Student</p>
-    </div>
-  </header>
-  
-  
-  <section class="flex-grow container mx-auto mt-10">
-    <div class="text-center">
-      <h2 class="text-3xl font-semibold mb-6">My Projects</h2>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 px-6">
-      
-      <a href="https://niyati-9.github.io/to-do-list/" target="_blank" class="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-        <h3 class="text-2xl font-semibold mb-4">Project 1</h3>
-        <p class="text-gray-700">To-Do List.</p>
-      </a>
-      
-      <a href="https://niyati-9.github.io/tictactoe/" target="_blank" class="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-        <h3 class="text-2xl font-semibold mb-4">Project 2</h3>
-        <p class="text-gray-700">TicTacToe Game.</p>
-      </a>
-    </div>
-  </section>
+<body>
 
+<a class="skip-link" href="#main">Skip to content</a>
 
- <section class="flex justify-center items-center mt-10 mb-10">
-    <div class="bg-white shadow-lg rounded-lg p-10 text-center w-11/12 md:w-2/3 lg:w-1/2">
-      <h2 class="text-3xl font-semibold mb-6">Contact Me</h2>
-      <div class="flex justify-center space-x-6">
-        
-        <a href="https://www.linkedin.com/in/niyati-malla-804802251/" target="_blank" class="text-blue-600 text-4xl">
-          <i class="fab fa-linkedin"></i>
-        </a>
-        
-        <a href="mailto:mallaniyati19@gmail.com" class="text-blue-600 text-4xl">
-          <i class="fas fa-envelope"></i>
-        </a>
+<header id="siteHeader">
+  <a href="#" class="logo" aria-label="Niyati Malla, home"><span class="n-first">niyati</span><span class="n-rest">malla</span></a>
+  <nav aria-label="Primary">
+    <ul>
+      <li><a href="#work">(My Work)</a></li>
+      <li><a href="#about">(About Me)</a></li>
+      <li><a href="blog.html">(Blog)</a></li>
+      <li><a href="#contact">(Let's Talk)</a></li>
+    </ul>
+  </nav>
+  <button class="hamburger" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" aria-controls="mobileNav">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+
+<nav class="mobile-nav" id="mobileNav" aria-label="Mobile">
+  <ul>
+    <li><a href="#work">Work</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="blog.html">Blog</a></li>
+    <li><a href="#contact">Connect</a></li>
+  </ul>
+  <div class="mobile-nav-foot">mallaniyati19@gmail.com</div>
+</nav>
+
+<main id="main">
+
+<section class="hero">
+  <span class="deco d1">✶</span>
+  <span class="deco d2">✶</span>
+  <span class="deco d3">✳</span>
+  <span class="deco d4">⋱</span>
+  <h1 class="reveal">hi, I'm <span class="i">Niyati</span><br>Creative<br>D<span class="i">i</span>gital Des<span class="i">i</span>gner.</h1>
+  <div class="scroll-note reveal">(scroll down &amp; explore)</div>
+  <div class="blob"></div>
+</section>
+
+<div class="projects-wrap" id="work">
+  <div class="projects-side reveal">
+    <span class="deco" style="position:static; margin-bottom: 10px; font-size:16px;">★</span>
+    <h2>selected<br>projects</h2>
+    <p class="eyebrow">(take a closer look at selected projects)</p>
+  </div>
+
+  <div class="work-head reveal">
+    <div class="work-head-text"></div>
+    <div class="work-nav">
+      <button type="button" id="carPrev" aria-label="Previous project">←</button>
+      <button type="button" id="carNext" aria-label="Next project">→</button>
+    </div>
+  </div>
+
+  <div class="projects-carousel reveal" id="projectsCarousel">
+
+    <a href="https://github.com/nischalp001/smart_cart" class="project-card" target="_blank" rel="noopener noreferrer">
+      <div class="card-visual cv-dark">
+        <span class="card-num">(01)</span>
+        <div class="glow"></div>
+        <span class="glyph">1</span>
       </div>
-    </div>
-  </section>
+      <div class="card-body">
+        <span class="card-eyebrow">AI &amp; Computer Vision</span>
+        <h3 class="card-title">Smart Cart</h3>
+        <p class="card-desc">AI-powered smart cart that automatically detects groceries, updates the bill in real time, and enables a fast, contactless checkout experience using computer vision.</p>
+        <div class="card-tech">
+          <span>Python</span><span>OpenCV</span><span>Computer Vision</span><span>Flask</span>
+        </div>
+        <span class="card-view">View Project</span>
+      </div>
+    </a>
 
-  
-  <footer class="bg-gray-700 text-white py-4">
-    <div class="container mx-auto text-center">
-      <p>&copy; 2024 Niyati Malla. All Rights Reserved.</p>
+    <a href="https://github.com/niyati-9/Attendance" class="project-card" target="_blank" rel="noopener noreferrer">
+      <div class="card-visual cv-mint">
+        <span class="card-num">(02)</span>
+        <div class="glow"></div>
+        <span class="glyph">2</span>
+      </div>
+      <div class="card-body">
+        <span class="card-eyebrow">Web &amp; Facial Recognition</span>
+        <h3 class="card-title">Facial Attendance System</h3>
+        <p class="card-desc">Facial recognition attendance system with automated attendance, role-based access control, REST APIs, and real-time analytics.</p>
+        <div class="card-tech">
+          <span>Python</span><span>Django</span><span>OpenCV</span><span>REST API</span>
+        </div>
+        <span class="card-view">View Project</span>
+      </div>
+    </a>
+
+    <a href="https://github.com/niyati-9/CapstoneProject" class="project-card" target="_blank" rel="noopener noreferrer">
+      <div class="card-visual cv-cream">
+        <span class="card-num">(03)</span>
+        <div class="glow"></div>
+        <span class="glyph">3</span>
+      </div>
+      <div class="card-body">
+        <span class="card-eyebrow">Web Design &amp; Development</span>
+        <h3 class="card-title">Enterprise Sales Analytics</h3>
+        <p class="card-desc">Real-time sales analytics dashboard with KPI tracking, district performance analysis, interactive visualizations, and CSV/JSON reporting.</p>
+        <div class="card-tech">
+          <span>Next.js</span><span>React</span><span>PostgreSQL</span><span>TypeScript</span>
+        </div>
+        <span class="card-view">View Project</span>
+      </div>
+    </a>
+
+    <a href="https://github.com/niyati-9/MechanicSathi/tree/main/week7app" class="project-card" target="_blank" rel="noopener noreferrer">
+      <div class="card-visual cv-charcoal">
+        <span class="card-num">(04)</span>
+        <div class="glow"></div>
+        <span class="glyph">4</span>
+      </div>
+      <div class="card-body">
+        <span class="card-eyebrow">Mobile App Development</span>
+        <h3 class="card-title">Mechanic Sathi</h3>
+        <p class="card-desc">React Native app helping travelers in Nepal find verified roadside workshops, with offline storage, emergency SOS calling, and search/ratings.</p>
+        <div class="card-tech">
+          <span>React Native</span><span>Expo</span><span>SQLite</span><span>JavaScript</span>
+        </div>
+        <span class="card-view">View Project</span>
+      </div>
+    </a>
+
+    <a href="https://github.com/niyati-9/week8finalproject" class="project-card" target="_blank" rel="noopener noreferrer">
+      <div class="card-visual cv-sand">
+        <span class="card-num">(05)</span>
+        <div class="glow"></div>
+        <span class="glyph">5</span>
+      </div>
+      <div class="card-body">
+        <span class="card-eyebrow">Web App &amp; Data Viz</span>
+        <h3 class="card-title">BMI Calculator</h3>
+        <p class="card-desc">Django-based BMI calculator that classifies results, estimates calorie adjustments for goal weight, and visualizes results with an interactive chart.</p>
+        <div class="card-tech">
+          <span>Python</span><span>Django</span><span>Chart.js</span>
+        </div>
+        <span class="card-view">View Project</span>
+      </div>
+    </a>
+
+  </div>
+</div>
+
+<section class="about" id="about">
+  <div class="about-col reveal">
+    <p class="eyebrow">(who am i)</p>
+    <h2>Creativity<br>Aesthetics</h2>
+  </div>
+  <div class="about-col reveal">
+    <span class="spin-mark">↻</span>
+    <p>I'm a Kathmandu-based developer and designer who enjoys building things end-to-end from database schema to the pixel on screen. I like turning everyday problems into clean, usable apps, blending solid engineering with interfaces people actually enjoy using.</p>
+  </div>
+</section>
+
+<section class="about">
+  <div class="about-col reveal">
+    <h2 style="font-size: clamp(40px,6vw,72px);">Quality</h2>
+  </div>
+  <div class="about-col reveal">
+    <span class="deco" style="position:static; font-size:16px; margin-bottom:16px;">✳</span>
+    <p>My goal is to ship work that's both functional and thoughtful code that holds up and design that feels intentional. Whether it's a mobile app, a dashboard, or a small tool, I care about the details that make something genuinely useful.</p>
+  </div>
+</section>
+
+<section class="blog-wrap" id="blog" aria-labelledby="blog-heading">
+  <div class="blog-head reveal">
+    <div>
+      <p class="eyebrow">(field notes)</p>
+      <h2 id="blog-heading">from the blog</h2>
+      <p class="eyebrow" style="margin-top:0;">(notes on building AI &amp; software in Nepal)</p>
     </div>
-  </footer>
+    <a href="blog.html" class="view-all">View all posts</a>
+  </div>
+
+  <div class="blog-grid reveal">
+    <a href="blog-smart-cart.html" class="blog-card">
+      <div class="blog-meta"><span>Computer Vision</span><span>·</span><span>6 min read</span></div>
+      <h3>Building an AI-Powered Smart Cart: What Computer Vision Taught Me About Retail</h3>
+      <p>How real-time object detection turns an ordinary shopping cart into a self-checkout counter, and the tradeoffs that came with it.</p>
+      <span class="card-view">Read Article</span>
+    </a>
+
+    <a href="blog-facial-attendance.html" class="blog-card">
+      <div class="blog-meta"><span>Computer Vision</span><span>·</span><span>5 min read</span></div>
+      <h3>Facial Recognition Attendance: Convenience, Accuracy, and Privacy in the Same System</h3>
+      <p>Notes from building a Django-based attendance system, and the design decisions that kept it fast, fair, and respectful of data.</p>
+      <span class="card-view">Read Article</span>
+    </a>
+
+    <a href="blog-mechanic-sathi.html" class="blog-card">
+      <div class="blog-meta"><span>Mobile</span><span>·</span><span>7 min read</span></div>
+      <h3>Designing Mechanic Sathi: Solving Roadside Emergencies for Travelers in Nepal</h3>
+      <p>Why offline-first architecture and a one-tap SOS button mattered more than a polished UI for this React Native app.</p>
+      <span class="card-view">Read Article</span>
+    </a>
+  </div>
+</section>
+
+<section class="contact" id="contact">
+  <div class="blob"></div>
+  <span class="deco" style="position:absolute; top:70px; left:15%;">✦</span>
+  <span class="deco" style="position:absolute; top:70px; right:15%;">✦</span>
+  <span class="deco" style="position:absolute; bottom:60px; left:14%;">✥</span>
+  <span class="deco" style="position:absolute; bottom:60px; right:14%;">⋱</span>
+  <p class="eyebrow reveal">(contact details)</p>
+  <h2 class="reveal">let's create<br>something together</h2>
+
+  <div class="contact-grid reveal">
+    <div class="social">
+      <h3>Social</h3>
+      <ul>
+        <li><a href="https://www.linkedin.com/in/niyati-malla-804802251/" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer"><svg class="social-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.66H9.34V8.98h3.42v1.57h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.29ZM5.32 7.41a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14Zm1.78 13.04H3.54V8.98H7.1v11.47Z"/></svg><span>LinkedIn</span></a></li>
+        <li><a href="https://github.com/niyati-9" aria-label="GitHub" target="_blank" rel="noopener noreferrer"><svg class="social-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.59 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.49 0-.24-.01-1.04-.01-1.89-2.78.62-3.37-1.21-3.37-1.21-.45-1.19-1.11-1.5-1.11-1.5-.91-.64.07-.63.07-.63 1 .08 1.53 1.06 1.53 1.06.9 1.57 2.35 1.12 2.92.86.09-.67.35-1.12.64-1.38-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.31.1-2.73 0 0 .84-.28 2.75 1.05A9.25 9.25 0 0 1 12 6.2c.85 0 1.7.12 2.5.34 1.91-1.33 2.75-1.05 2.75-1.05.55 1.42.2 2.47.1 2.73.64.72 1.03 1.63 1.03 2.75 0 3.94-2.35 4.8-4.58 5.06.36.32.68.93.68 1.88 0 1.36-.01 2.46-.01 2.8 0 .27.18.59.69.49A10.27 10.27 0 0 0 22 12.25C22 6.59 17.52 2 12 2Z"/></svg><span>GitHub</span></a></li>
+      </ul>
+    </div>
+    <form class="form" id="contactForm" action="https://formspree.io/f/mnjkeogq" method="POST">
+      <div class="field">
+        <label for="contactName">Your Name</label>
+        <input id="contactName" name="name" type="text" placeholder="Nisha" required>
+      </div>
+      <div class="field">
+        <label for="contactEmail">Your Email</label>
+        <input id="contactEmail" name="email" type="email" placeholder="hello@nisha.com" required>
+      </div>
+      <div class="field">
+        <label for="contactMessage">Your Message</label>
+        <textarea id="contactMessage" name="message" placeholder="Hi, I'm looking for a designer for my website..." required></textarea>
+      </div>
+      <!-- Sends the notification email to a fixed address regardless of who fills the form -->
+      <input type="hidden" name="_replyto" value="">
+      <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
+      <div class="submit-row">
+        <span class="form-status" id="formStatus"></span>
+        <button type="submit" class="submit-btn" id="submitBtn">Submit <span class="plus">+</span></button>
+      </div>
+    </form>
+  </div>
+
+  <div class="contact-email">mallaniyati19@gmail.com <span style="font-size:14px;">✥</span></div>
+</section>
+
+</main>
+
+<footer class="copyright">(© 2026 NIYATI MALLA) · <a href="blog.html">Blog</a> · <a href="sitemap.xml">Sitemap</a></footer>
+
+<script>
+  // Header background on scroll
+  const header = document.getElementById('siteHeader');
+  window.addEventListener('scroll', () => {
+    header.classList.toggle('scrolled', window.scrollY > 20);
+  });
+
+  // Hamburger / mobile nav
+  const hamburgerBtn = document.getElementById('hamburgerBtn');
+  const mobileNav = document.getElementById('mobileNav');
+
+  function closeMobileNav(){
+    hamburgerBtn.classList.remove('open');
+    hamburgerBtn.setAttribute('aria-expanded', 'false');
+    mobileNav.classList.remove('open');
+    document.body.classList.remove('nav-locked');
+  }
+
+  hamburgerBtn.addEventListener('click', () => {
+    const isOpen = hamburgerBtn.classList.toggle('open');
+    hamburgerBtn.setAttribute('aria-expanded', String(isOpen));
+    mobileNav.classList.toggle('open', isOpen);
+    document.body.classList.toggle('nav-locked', isOpen);
+  });
+
+  mobileNav.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', (e) => {
+      const href = a.getAttribute('href');
+      if(href && href.startsWith('#')){
+        e.preventDefault();
+        closeMobileNav();
+        const target = document.querySelector(href);
+        if(target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth' }), 300);
+      } else {
+        closeMobileNav();
+      }
+    });
+  });
+
+  // Project carousel: continuously drifts sideways, plus arrow buttons + drag-to-scroll
+  const carousel = document.getElementById('projectsCarousel');
+  const prevBtn = document.getElementById('carPrev');
+  const nextBtn = document.getElementById('carNext');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if(carousel){
+    // Duplicate the card set once so the drift can loop seamlessly
+    const originalCards = Array.from(carousel.children);
+    originalCards.forEach(card => {
+      const clone = card.cloneNode(true);
+      clone.setAttribute('aria-hidden', 'true');
+      clone.setAttribute('tabindex', '-1');
+      carousel.appendChild(clone);
+    });
+
+    let halfWidth = 0;
+    function measure(){
+      halfWidth = carousel.scrollWidth / 2;
+    }
+    measure();
+    window.addEventListener('resize', measure);
+
+    const scrollStep = () => (carousel.querySelector('.project-card')?.offsetWidth || 340) + 28;
+
+    let autoPaused = false;
+    let isDown = false, startX = 0, startScroll = 0, moved = false;
+    const SPEED = 0.7; // px per frame — steady, clearly visible auto-scroll
+
+    function tick(){
+      if(!autoPaused && !isDown){
+        carousel.scrollLeft += SPEED;
+        if(halfWidth && carousel.scrollLeft >= halfWidth){
+          carousel.scrollLeft -= halfWidth;
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    carousel.addEventListener('mouseenter', () => { autoPaused = true; });
+    carousel.addEventListener('mouseleave', () => { autoPaused = false; });
+    carousel.addEventListener('touchstart', () => { autoPaused = true; }, { passive: true });
+    carousel.addEventListener('touchend', () => { setTimeout(() => autoPaused = false, 1200); });
+
+    prevBtn?.addEventListener('click', () => {
+      autoPaused = true;
+      carousel.scrollLeft -= scrollStep();
+      if(carousel.scrollLeft < 0) carousel.scrollLeft += halfWidth;
+      setTimeout(() => autoPaused = false, 1600);
+    });
+    nextBtn?.addEventListener('click', () => {
+      autoPaused = true;
+      carousel.scrollLeft += scrollStep();
+      if(halfWidth && carousel.scrollLeft >= halfWidth) carousel.scrollLeft -= halfWidth;
+      setTimeout(() => autoPaused = false, 1600);
+    });
+
+    // Drag-to-scroll for mouse users
+    carousel.addEventListener('mousedown', (e) => {
+      isDown = true; moved = false; autoPaused = true;
+      carousel.classList.add('dragging');
+      startX = e.pageX;
+      startScroll = carousel.scrollLeft;
+    });
+    window.addEventListener('mouseup', () => {
+      isDown = false;
+      carousel.classList.remove('dragging');
+      setTimeout(() => autoPaused = false, 800);
+    });
+    window.addEventListener('mouseleave', () => { isDown = false; carousel.classList.remove('dragging'); });
+    window.addEventListener('mousemove', (e) => {
+      if(!isDown) return;
+      const dx = e.pageX - startX;
+      if(Math.abs(dx) > 4) moved = true;
+      let next = startScroll - dx;
+      if(halfWidth){
+        if(next < 0) next += halfWidth;
+        if(next >= halfWidth) next -= halfWidth;
+      }
+      carousel.scrollLeft = next;
+    });
+    // Prevent the click-through to a card link after an actual drag
+    carousel.addEventListener('click', (e) => { if(moved){ e.preventDefault(); moved = false; } }, true);
+  }
+
+  // Scroll reveal
+  const revealEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        entry.target.classList.add('in');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  revealEls.forEach(el => io.observe(el));
+
+  // Smooth anchor scroll (desktop nav)
+  document.querySelectorAll('header nav a[href^="#"]').forEach(a => {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if(target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  // Contact form — sends real email via Formspree, without leaving the page
+  const form = document.getElementById('contactForm');
+  const statusEl = document.getElementById('formStatus');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = form.querySelector('.submit-btn');
+    const original = btn.innerHTML;
+
+    // keep the reply-to address in sync with whatever the visitor typed
+    form.querySelector('input[name="_replyto"]').value = form.querySelector('#contactEmail').value;
+
+    btn.disabled = true;
+    btn.innerHTML = 'Sending…';
+    statusEl.textContent = '';
+    statusEl.classList.remove('error');
+
+    try{
+      const res = await fetch(form.action, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        body: new FormData(form)
+      });
+
+      if(res.ok){
+        btn.innerHTML = 'Sent ✓';
+        statusEl.textContent = "Thanks — I'll get back to you soon.";
+        form.reset();
+        setTimeout(() => { btn.innerHTML = original; btn.disabled = false; statusEl.textContent = ''; }, 3000);
+      } else {
+        throw new Error('Request failed');
+      }
+    } catch(err){
+      btn.innerHTML = original;
+      btn.disabled = false;
+      statusEl.textContent = 'Something went wrong — please email me directly instead.';
+      statusEl.classList.add('error');
+    }
+  });
+</script>
+
 </body>
 </html>

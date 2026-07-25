@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Designing Mechanic Sathi | Niyati Malla</title>
+<meta name="description" content="Why offline-first architecture and a one-tap SOS button mattered more than a polished UI when designing Mechanic Sathi, a React Native app for roadside help in Nepal.">
+<meta name="keywords" content="React Native app, offline-first mobile design, Nepal travel app, SQLite, roadside assistance, emergency SOS app">
+<meta name="author" content="Niyati Malla">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://www.mallaniyati.com.np/blog-mechanic-sathi.html">
+<meta name="theme-color" content="#f4f3f1">
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Niyati Malla">
+<meta property="og:title" content="Designing Mechanic Sathi: Solving Roadside Emergencies for Travelers in Nepal">
+<meta property="og:description" content="Why offline-first architecture and a one-tap SOS button mattered more than a polished UI for this React Native app.">
+<meta property="og:url" content="https://www.mallaniyati.com.np/blog-mechanic-sathi.html">
+<meta property="og:image" content="https://www.mallaniyati.com.np/og-image.jpg">
+<meta property="article:published_time" content="2026-06-02">
+<meta property="article:author" content="Niyati Malla">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Designing Mechanic Sathi">
+<meta name="twitter:description" content="How real-time object detection turns an ordinary shopping cart into a self-checkout counter.">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231a1a1a'/%3E%3Ctext x='50' y='68' font-size='58' font-family='Georgia,serif' font-style='italic' fill='%2370f6a7' text-anchor='middle'%3En%3C/text%3E%3C/svg%3E">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Designing Mechanic Sathi: Solving Roadside Emergencies for Travelers in Nepal",
+  "description": "Why offline-first architecture and a one-tap SOS button mattered more than a polished UI for this React Native app.",
+  "author": {
+    "@type": "Person",
+    "name": "Niyati Malla",
+    "url": "https://www.mallaniyati.com.np/",
+    "description": "Kathmandu-based developer and designer building AI-powered apps, computer-vision tools, and mobile products end-to-end.",
+    "sameAs": [
+      "https://www.linkedin.com/in/niyati-malla-804802251/",
+      "https://github.com/niyati-9"
+    ]
+  },
+  "datePublished": "2026-06-02",
+  "dateModified": "2026-07-25",
+  "mainEntityOfPage": "https://www.mallaniyati.com.np/blog-mechanic-sathi.html",
+  "publisher": { "@type": "Person", "name": "Niyati Malla" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does Mechanic Sathi work with zero signal at all, or just weak signal?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Search, browsing, and already-synced workshop details work offline since that data lives locally in SQLite. Placing the SOS call or pulling brand-new listings still needs at least a phone signal." }
+    },
+    {
+      "@type": "Question",
+      "name": "How are workshops verified before appearing in the app?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Listings go through a verification step before becoming searchable, and ratings are tied to completed interactions rather than open, unverified reviews." }
+    },
+    {
+      "@type": "Question",
+      "name": "Why build this specifically for Nepal instead of a general roadside-assistance app?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Rural and mountain roads in Nepal have connectivity gaps many assistance apps built for denser markets don't design around. Solving for offline-first, not just offline-tolerant, use was the point of the project." }
+    }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#f4f3f1; --ink:#1a1a1a; --ink-soft:#4a4a48; --line:#d9d7d2; --accent:#70f6a7; --accent-soft:#a2eba8; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif; }
+  a{ color:inherit; text-decoration:none; }
+  .eyebrow{ font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); font-weight:500; }
+  .skip-link{ position:absolute; left:-9999px; background:var(--ink); color:var(--bg); padding:10px 16px; z-index:200; font-size:13px; }
+  .skip-link:focus{ left:0; top:0; }
+
+  header{ position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between; padding:28px 48px; background:var(--bg); border-bottom:1px solid var(--line); }
+  .logo{ font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:700; font-size:27px; letter-spacing:-.035em; display:inline-flex; align-items:baseline; gap:2px; }
+  .logo .n-rest{ color:var(--ink-soft); font-weight:600; }
+  nav ul{ display:flex; gap:36px; list-style:none; margin:0; padding:0; }
+  nav a{ font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); }
+  nav a:hover{ color:var(--ink); }
+  .hamburger{ display:none; flex-direction:column; justify-content:center; align-items:center; gap:5px; width:40px; height:40px; background:none; border:none; cursor:pointer; z-index:110; }
+  .hamburger span{ display:block; width:22px; height:1px; background:var(--ink); transition:transform .3s ease, opacity .25s ease; }
+  .hamburger.open span:nth-child(1){ transform:translateY(6px) rotate(45deg); }
+  .hamburger.open span:nth-child(2){ opacity:0; }
+  .hamburger.open span:nth-child(3){ transform:translateY(-6px) rotate(-45deg); }
+  .mobile-nav{ position:fixed; inset:0; z-index:100; background:var(--bg); display:flex; flex-direction:column; justify-content:center; padding:0 32px; opacity:0; visibility:hidden; transition:opacity .3s ease, visibility 0s linear .3s; }
+  .mobile-nav.open{ opacity:1; visibility:visible; transition:opacity .3s ease; }
+  .mobile-nav ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+  .mobile-nav a{ font-family:'Playfair Display',serif; font-style:italic; font-weight:600; font-size:14vw; color:var(--ink); }
+  body.nav-locked{ overflow:hidden; }
+
+  .article-head{ padding: 70px 48px 20px; max-width: 760px; margin: 0 auto; }
+  .back-link{ display:inline-flex; align-items:center; gap:8px; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom: 30px; }
+  .back-link:hover{ color: var(--ink); }
+  .article-head h1{ font-family:'Playfair Display',serif; font-weight:700; font-size: clamp(32px,5.5vw,52px); line-height:1.12; margin: 10px 0 22px; }
+  .article-meta{ display:flex; gap:16px; flex-wrap:wrap; font-size:12.5px; color:var(--ink-soft); border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding: 16px 0; margin-bottom: 8px; }
+
+  article.body{ max-width: 760px; margin: 0 auto; padding: 40px 48px 100px; font-size: 17px; line-height: 1.85; color: #2b2b29; }
+  article.body h2{ font-family:'Playfair Display',serif; font-weight:700; font-size: 27px; margin: 48px 0 16px; line-height:1.3; }
+  article.body p{ margin: 0 0 22px; }
+  article.body ul, article.body ol{ margin: 0 0 22px; padding-left: 22px; }
+  article.body li{ margin-bottom: 10px; }
+  article.body blockquote{ margin: 32px 0; padding: 4px 0 4px 24px; border-left: 3px solid var(--accent); font-family:'Fraunces',serif; font-style:italic; font-size: 19px; color: var(--ink); }
+  article.body code{ background: #ece9e3; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+  .tags{ display:flex; gap:8px; flex-wrap:wrap; margin-top: 40px; }
+  .tags span{ font-size:11px; padding:5px 12px; border-radius:20px; border:1px solid var(--line); color:var(--ink-soft); }
+
+  .sources{ margin-top: 36px; padding-top: 24px; border-top: 1px dashed var(--line); }
+  .sources p{ font-size: 13px; color: var(--ink-soft); margin: 0 0 10px; }
+  .sources ul{ margin: 0; padding-left: 20px; font-size: 13.5px; }
+  .sources li{ margin-bottom: 6px; }
+  .sources a{ text-decoration: underline; text-underline-offset: 2px; color: var(--ink-soft); }
+  .sources a:hover{ color: var(--ink); }
+
+  .faq{ margin-top: 8px; }
+  .faq-item{ border-top: 1px solid var(--line); padding: 22px 0; }
+  .faq-item h3{ font-family:'Playfair Display',serif; font-weight:700; font-size: 18px; margin: 0 0 10px; line-height:1.35; }
+  .faq-item p{ margin:0; font-size:15.5px; color:#2b2b29; }
+
+  .author-box{ margin-top: 56px; padding: 28px; border: 1px solid var(--line); border-radius: 20px; display:flex; gap: 20px; align-items:flex-start; background: var(--bg); }
+  .author-avatar{ flex:0 0 56px; width:56px; height:56px; border-radius:50%; background: linear-gradient(135deg, var(--accent-soft), var(--accent)); display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-weight:700; font-size:19px; color:#1a1a1a; }
+  .author-info p{ margin: 0 0 8px; }
+  .author-name{ font-family:'Playfair Display',serif; font-weight:700; font-size: 16px; }
+  .author-bio{ font-size: 14px; line-height:1.65; color: var(--ink-soft); }
+  .author-links{ display:flex; gap: 14px; margin-top: 6px; }
+  .author-links a{ font-size: 12.5px; text-decoration: underline; text-underline-offset: 2px; color: var(--ink-soft); }
+  .author-links a:hover{ color: var(--ink); }
+  .fact-check{ font-size: 12px; color: var(--ink-soft); margin-top: 10px; }
+
+  .related{ border-top:1px solid var(--line); padding: 70px 48px 100px; max-width: 1100px; margin:0 auto; }
+  .related h3{ font-family:'Fraunces',serif; font-style:italic; font-weight:600; font-size: 28px; margin: 0 0 28px; }
+  .related-grid{ display:grid; grid-template-columns: repeat(2,1fr); gap: 24px; }
+  .related-card{ border:1px solid var(--line); border-radius:18px; padding:24px; transition: border-color .3s ease, transform .3s ease; }
+  .related-card:hover{ border-color: var(--ink); transform: translateY(-4px); }
+  .related-card .eyebrow{ margin-bottom: 8px; }
+  .related-card h4{ font-family:'Playfair Display',serif; font-size:18px; margin:0; line-height:1.35; }
+
+  .cta{ border-top:1px solid var(--line); padding: 70px 48px; text-align:center; }
+  .cta h2{ font-family:'Fraunces',serif; font-style:italic; font-weight:600; font-size: clamp(28px,4vw,42px); margin: 8px 0 24px; }
+  .cta a.btn{ font-family:'Playfair Display',serif; font-style:italic; font-size:16px; border-bottom:1px solid var(--ink); padding-bottom:3px; }
+
+  footer.copyright{ text-align:center; padding: 30px 0 40px; font-size:11px; letter-spacing:.1em; color:var(--ink-soft); border-top:1px solid var(--line); }
+  footer.copyright a{ text-decoration:underline; text-underline-offset:3px; }
+
+  @media (max-width:900px){
+    nav{ display:none; } .hamburger{ display:flex; }
+    header{ padding:18px 20px; }
+    .article-head{ padding: 48px 20px 12px; }
+    article.body{ padding: 32px 20px 72px; font-size:16px; }
+    .related{ padding: 48px 20px 72px; }
+    .related-grid{ grid-template-columns: 1fr; }
+    .cta{ padding: 48px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header id="siteHeader">
+  <a href="index.html" class="logo" aria-label="Niyati Malla, home"><span>niyati</span><span class="n-rest">malla</span></a>
+  <nav aria-label="Primary">
+    <ul>
+      <li><a href="index.html#work">(My Work)</a></li>
+      <li><a href="index.html#about">(About Me)</a></li>
+      <li><a href="blog.html">(Blog)</a></li>
+      <li><a href="index.html#contact">(Let's Talk)</a></li>
+    </ul>
+  </nav>
+  <button class="hamburger" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" aria-controls="mobileNav">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+
+<nav class="mobile-nav" id="mobileNav" aria-label="Mobile">
+  <ul>
+    <li><a href="index.html#work">Work</a></li>
+    <li><a href="index.html#about">About</a></li>
+    <li><a href="blog.html">Blog</a></li>
+    <li><a href="index.html#contact">Connect</a></li>
+  </ul>
+</nav>
+
+<main id="main">
+<div class="article-head">
+  <a href="blog.html" class="back-link">← Back to blog</a>
+  <p class="eyebrow">Mobile</p>
+  <h1>Designing Mechanic Sathi: Solving Roadside Emergencies for Travelers in Nepal</h1>
+  <div class="article-meta">
+    <span>Niyati Malla</span><span>·</span><span>June 2, 2026</span><span>·</span><span>7 min read</span>
+  </div>
+</div>
+
+<article class="body">
+  <p>Nepal's highways are dotted with small roadside workshops, but finding one when you actually need it bike broken down outside a town you don't know, no signal-strength to spare is a different problem entirely. Mechanic Sathi ("mechanic companion") is a React Native app built to solve exactly that: help travelers find verified roadside workshops, call for help, and do it all even when the connection drops out.</p>
+
+  <p>The stack is React Native with Expo for the app itself, and SQLite for local, offline-first storage. That last detail shaped almost every decision in the app.</p>
+
+  <h2>Why offline-first wasn't optional</h2>
+  <p>Most app tutorials treat offline support as a nice-to-have a cache layer added once the "real" online-first version works. For Mechanic Sathi, that ordering had to be reversed. The people who need this app most are often exactly where connectivity is worst: mountain roads, rural stretches between towns, places where a data connection comes and goes with the terrain.</p>
+
+  <p>So workshop listings, ratings, and contact details are stored locally with SQLite from the start, synced opportunistically whenever a connection is available. A traveler searching for the nearest workshop isn't waiting on a network request that might time out they're querying data that's already sitting on their phone.</p>
+
+  <blockquote>The app has to assume the network is the exception, not the rule. Everything else follows from that one assumption.</blockquote>
+
+  <h2>The SOS button is the whole point</h2>
+  <p>Search and ratings matter, but the feature that actually justifies the app's existence is the one-tap emergency SOS call. When something goes wrong on an unfamiliar road, nobody wants to navigate three menus to find a phone number. The SOS flow is intentionally minimal one visible action, no confirmation dialogs standing in the way, connecting a traveler to help as fast as the interface can get out of their way.</p>
+
+  <p>Designing for a stressful, time-sensitive moment is a different discipline than designing for a browsing session. Every extra tap in a calm-state feature is a minor annoyance; every extra tap in an emergency flow is a real cost. That distinction shaped the whole interaction design the busiest, most detailed part of the app is the search and discovery experience, and the calmest, sparest part is the one you reach for when you're not calm at all.</p>
+
+  <h2>Verified listings, not crowdsourced guesses</h2>
+  <p>A directory of roadside workshops is only useful if it's trustworthy. Unverified listings wrong locations, workshops that closed years ago, inflated ratings would undermine the app faster than having no listings at all. Workshops in Mechanic Sathi go through a verification step before they're searchable, and ratings are tied to real completed interactions rather than open-ended reviews anyone could post.</p>
+
+  <h2>What building this taught me about designing for real conditions</h2>
+  <p>It's easy to design for the phone in your hand, on office Wi-Fi, at a comfortable desk. It's harder and more honest to design for a phone at 40% battery, patchy signal, and a rider who's stressed and in a hurry. Mechanic Sathi pushed me to test on exactly those conditions: airplane mode, low storage, a screen viewed at an angle in bright sunlight. Most of the "polish" work on this app wasn't visual it was making sure the core flow held up when everything around it was working against the user.</p>
+
+  <h2>How I actually tested the offline behavior</h2>
+  <p>I didn't just assume the offline-first design worked I tested it the way a traveler would actually hit it. That meant toggling airplane mode mid-search, force-closing the app while a sync was in progress, and walking between rooms with a phone set to weak-signal simulation to see how gracefully the app recovered once connectivity returned. The local SQLite queries stayed fast and consistent throughout; the harder problem was making sure a sync that got interrupted halfway through didn't leave the local database in a half-updated state. Handling that cleanly rather than assuming syncs always complete took more iteration than the search feature itself.</p>
+
+  <p>I also timed the SOS flow specifically, since that's the one interaction where speed genuinely matters more than anything else in the app. From tapping the button to a call being placed, the goal was to minimize every intermediate step no loading spinner standing between a stressed user and a phone call they need to make right now.</p>
+
+  <h2>Why Expo and SQLite were the right fit, not just the easy fit</h2>
+  <p>Expo's managed workflow meant less time wiring up native build tooling and more time on the actual offline-sync and SOS logic that makes this app different from a generic directory listing. SQLite was the more deliberate choice: it's a real embedded relational database rather than a simple key-value cache, which mattered once workshop search needed filtering by location, rating, and service type the kind of querying that a flat local cache handles poorly but a proper local database handles natively.</p>
+
+  <h2>Frequently asked questions</h2>
+  <div class="faq">
+    <div class="faq-item">
+      <h3>Does Mechanic Sathi work with zero signal at all, or just weak signal?</h3>
+      <p>Search, browsing, and viewing already-synced workshop details work with zero connectivity, since that data lives locally in SQLite. Actions that need a live connection like placing the SOS call itself or pulling brand-new listings obviously still need at least a phone signal to complete.</p>
+    </div>
+    <div class="faq-item">
+      <h3>How are workshops verified before they appear in the app?</h3>
+      <p>Listings go through a verification step before becoming searchable, rather than being accepted purely from open submissions, and ratings are tied to completed interactions rather than open-ended, unverified reviews.</p>
+    </div>
+    <div class="faq-item">
+      <h3>Why build this specifically for Nepal instead of a general roadside-assistance app?</h3>
+      <p>Rural and mountain roads in Nepal have connectivity gaps that a lot of assistance apps built for denser, better-connected markets don't design around at all. Solving for that specific condition offline-first, not offline-tolerant was the actual point of the project.</p>
+    </div>
+  </div>
+
+  <p>The code is up on <a href="https://github.com/niyati-9/MechanicSathi/tree/main/week7app" target="_blank" rel="noopener noreferrer">GitHub</a> if you want to see how the offline sync and SOS flow are implemented.</p>
+
+  <div class="tags">
+    <span>React Native</span><span>Expo</span><span>SQLite</span><span>Offline-First</span><span>Mobile UX</span>
+  </div>
+
+  <div class="sources">
+    <p>Further reading &amp; references:</p>
+    <ul>
+      <li><a href="https://docs.expo.dev/" target="_blank" rel="noopener noreferrer">Expo official documentation</a></li>
+      <li><a href="https://reactnative.dev/docs/getting-started" target="_blank" rel="noopener noreferrer">React Native official documentation</a></li>
+    </ul>
+  </div>
+
+  <div class="author-box">
+    <div class="author-avatar">NM</div>
+    <div class="author-info">
+      <p class="author-name">Written by Niyati Malla</p>
+      <p class="author-bio">Niyati is a Kathmandu-based developer and designer who builds mobile, web, and computer-vision products end-to-end. She designed and tested Mechanic Sathi's offline-sync and SOS flow herself under real low-connectivity conditions, drawing on her experience building for Nepal's transport and travel context.</p>
+      <div class="author-links">
+        <a href="https://github.com/niyati-9" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://www.linkedin.com/in/niyati-malla-804802251/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        <a href="index.html#contact">Contact</a>
+      </div>
+      <p class="fact-check">Published June 2, 2026. Based on hands-on testing of the project described; code is publicly available on GitHub for verification.</p>
+    </div>
+  </div>
+</article>
+
+<section class="related" aria-labelledby="related-heading">
+  <h3 id="related-heading">Read next</h3>
+  <div class="related-grid">
+    <a href="blog-smart-cart.html" class="related-card">
+      <p class="eyebrow">Computer Vision</p>
+      <h4>Building an AI-Powered Smart Cart: What Computer Vision Taught Me About Retail</h4>
+    </a>
+    <a href="blog-facial-attendance.html" class="related-card">
+      <p class="eyebrow">Computer Vision</p>
+      <h4>Facial Recognition Attendance: Convenience, Accuracy, and Privacy in the Same System</h4>
+    </a>
+  </div>
+</section>
+
+<section class="cta">
+  <p class="eyebrow">(have a project in mind)</p>
+  <h2>Let's build something together.</h2>
+  <a href="index.html#contact" class="btn">Get in touch ↗</a>
+</section>
+</main>
+
+<footer class="copyright">(© 2026 NIYATI MALLA) · <a href="index.html">Home</a> · <a href="blog.html">Blog</a></footer>
+
+<script>
+  const hamburgerBtn = document.getElementById('hamburgerBtn');
+  const mobileNav = document.getElementById('mobileNav');
+  hamburgerBtn.addEventListener('click', () => {
+    const isOpen = hamburgerBtn.classList.toggle('open');
+    hamburgerBtn.setAttribute('aria-expanded', String(isOpen));
+    mobileNav.classList.toggle('open', isOpen);
+    document.body.classList.toggle('nav-locked', isOpen);
+  });
+  mobileNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+    hamburgerBtn.classList.remove('open');
+    mobileNav.classList.remove('open');
+    document.body.classList.remove('nav-locked');
+  }));
+</script>
+
+</body>
+</html>
