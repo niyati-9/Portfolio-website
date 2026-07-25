@@ -5,12 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Building an AI-Powered Smart Cart | Niyati Malla</title>
-<meta name="description" content="How real-time object detection with OpenCV and Flask turns an ordinary shopping cart into a self-checkout counter and the tradeoffs I ran into building Smart Cart.">
+<meta name="description" content="How real-time object detection with OpenCV and Flask turns an ordinary shopping cart into a self-checkout counter — and the tradeoffs I ran into building Smart Cart.">
 <meta name="keywords" content="smart cart, computer vision retail, OpenCV, object detection, contactless checkout, Python Flask project">
 <meta name="author" content="Niyati Malla">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://www.mallaniyati.com.np/blog-smart-cart.html">
 <meta name="theme-color" content="#f4f3f1">
+
+<!-- Google Analytics (GA4) — replace G-XXXXXXXXXX with your real Measurement ID from analytics.google.com -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
 
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Niyati Malla">
@@ -25,6 +34,10 @@
 <meta name="twitter:title" content="Building an AI-Powered Smart Cart">
 <meta name="twitter:description" content="How real-time object detection turns an ordinary shopping cart into a self-checkout counter.">
 
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231a1a1a'/%3E%3Ctext x='50' y='68' font-size='58' font-family='Georgia,serif' font-style='italic' fill='%2370f6a7' text-anchor='middle'%3En%3C/text%3E%3C/svg%3E">
 
 <script type="application/ld+json">
@@ -74,7 +87,10 @@
 </script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600&display=swap" media="print" onload="this.media='all'; this.onload=null;">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600&display=swap"></noscript>
 <style>
   :root{ --bg:#f4f3f1; --ink:#1a1a1a; --ink-soft:#4a4a48; --line:#d9d7d2; --accent:#70f6a7; --accent-soft:#a2eba8; }
   *{ box-sizing:border-box; }
@@ -206,10 +222,10 @@
 <article class="body">
   <p>Smart Cart started as a simple question: what if the checkout counter moved into the cart itself? Instead of unloading a basket onto a belt and waiting for someone to scan every item, the cart would already know what was inside it the moment an item went in.</p>
 
-  <p>The project uses a camera mounted on the cart, a lightweight object-detection model, and a running total that updates the instant a product crosses into frame. Under the hood it's Python, OpenCV for the vision pipeline, and Flask serving a simple interface that shows the live bill. No barcode scanning, no waiting in linejust walk up, drop items in, and check the total on a screen.</p>
+  <p>The project uses a camera mounted on the cart, a lightweight object-detection model, and a running total that updates the instant a product crosses into frame. Under the hood it's Python, OpenCV for the vision pipeline, and Flask serving a simple interface that shows the live bill. No barcode scanning, no waiting in line — just walk up, drop items in, and check the total on a screen.</p>
 
   <h2>Why object detection instead of barcodes</h2>
-  <p>Barcode scanning is reliable, but it puts all the work on the shopper every item has to be individually presented to a scanner. The goal here was the opposite: let the system do the noticing. That meant training and tuning a detector that could recognize common grocery items from different angles, under cart-level lighting, in a single frame that might contain more than one product at once.</p>
+  <p>Barcode scanning is reliable, but it puts all the work on the shopper — every item has to be individually presented to a scanner. The goal here was the opposite: let the system do the noticing. That meant training and tuning a detector that could recognize common grocery items from different angles, under cart-level lighting, in a single frame that might contain more than one product at once.</p>
 
   <p>Getting this right meant accepting a few real constraints early on:</p>
   <ul>
@@ -221,25 +237,25 @@
   <h2>What the pipeline actually does</h2>
   <p>Each frame from the cart's camera is passed through the detection model, which returns bounding boxes and class labels for anything it recognizes. Those detections get matched against a small product catalog with prices, and the running bill updates live. A basic tracking layer prevents the same item from being counted twice as it settles into the cart.</p>
 
-  <blockquote>The interesting engineering problem wasn't "can the model see the item" it was "how do we know it's a new item and not the same can rolling into view again."</blockquote>
+  <blockquote>The interesting engineering problem wasn't "can the model see the item" — it was "how do we know it's a new item and not the same can rolling into view again."</blockquote>
 
   <p>That tracking logic ended up being just as important as the detection accuracy itself. Without it, every shake of the cart risked inflating the total.</p>
 
-  <h2>Where it fell short and what that taught me</h2>
-  <p>Smart Cart is a prototype, not a finished retail product, and it's honest about that. Packaged goods with clear, distinct shapes detect well. Loose produce, near-identical packaging, and items stacked directly on top of each other are still the hardest cases the same problems that make self-checkout kiosks frustrating in the real world.</p>
+  <h2>Where it fell short — and what that taught me</h2>
+  <p>Smart Cart is a prototype, not a finished retail product, and it's honest about that. Packaged goods with clear, distinct shapes detect well. Loose produce, near-identical packaging, and items stacked directly on top of each other are still the hardest cases — the same problems that make self-checkout kiosks frustrating in the real world.</p>
 
-  <p>That's the biggest lesson from building it: computer vision projects rarely fail on the "does the model work" question in isolation. They succeed or fail on the edge cases the half-hidden item, the bad lighting, the shopper who tosses a bag of chips in at an angle. Designing for those cases, not just the clean demo case, is most of the actual work.</p>
+  <p>That's the biggest lesson from building it: computer vision projects rarely fail on the "does the model work" question in isolation. They succeed or fail on the edge cases — the half-hidden item, the bad lighting, the shopper who tosses a bag of chips in at an angle. Designing for those cases, not just the clean demo case, is most of the actual work.</p>
 
   <h2>Where this could go next</h2>
   <p>A few directions I'd explore if I kept building this out: weight sensors as a second signal to cross-check vision-based counts, a mobile app so shoppers can review their live cart on their own phone, and a feedback loop where corrected items get folded back into training data over time.</p>
 
   <h2>How I actually tested it</h2>
-  <p>I didn't rely on a single clean dataset to judge whether this worked. I ran the cart through three conditions on purpose: a well-lit setup similar to a demo booth, a dimmer "back corner of the store" setup, and a deliberately cluttered cart with items stacked and overlapping. Detection confidence in the first case was consistently strong; in the cluttered case, it dropped noticeably whenever two items shared more than roughly half their visible surface. That gap between the best-case and worst-case results is the number that actually matters for a project like this a demo reel only shows the best case, and it would have been easy to stop testing there.</p>
+  <p>I didn't rely on a single clean dataset to judge whether this worked. I ran the cart through three conditions on purpose: a well-lit setup similar to a demo booth, a dimmer "back corner of the store" setup, and a deliberately cluttered cart with items stacked and overlapping. Detection confidence in the first case was consistently strong; in the cluttered case, it dropped noticeably whenever two items shared more than roughly half their visible surface. That gap between the best-case and worst-case results is the number that actually matters for a project like this — a demo reel only shows the best case, and it would have been easy to stop testing there.</p>
 
-  <p>I also timed the pipeline end to end, from frame capture to updated bill, because a system that's accurate but slow doesn't actually solve the checkout problem it's meant to solve. Keeping the detection step lightweight enough to run close to real time on ordinary hardware, rather than reaching for the largest available model, was a deliberate tradeoff a marginally more accurate model that lags behind the shopper's hand isn't actually more useful.</p>
+  <p>I also timed the pipeline end to end, from frame capture to updated bill, because a system that's accurate but slow doesn't actually solve the checkout problem it's meant to solve. Keeping the detection step lightweight enough to run close to real time on ordinary hardware, rather than reaching for the largest available model, was a deliberate tradeoff — a marginally more accurate model that lags behind the shopper's hand isn't actually more useful.</p>
 
   <h2>The stack, and why each piece earned its place</h2>
-  <p>OpenCV handles the lower-level image work frame capture, preprocessing, and drawing the bounding boxes used during debugging. Python was the natural choice for gluing the detection model to the billing logic, since most computer vision tooling is Python-first and the ecosystem for both machine learning and simple web serving overlaps heavily there. Flask, rather than a heavier framework, was enough to expose a live bill to a browser without adding infrastructure the project didn't need. None of these choices are exotic the interesting engineering happened in how the pieces were wired together, not in picking unusual tools.</p>
+  <p>OpenCV handles the lower-level image work — frame capture, preprocessing, and drawing the bounding boxes used during debugging. Python was the natural choice for gluing the detection model to the billing logic, since most computer vision tooling is Python-first and the ecosystem for both machine learning and simple web serving overlaps heavily there. Flask, rather than a heavier framework, was enough to expose a live bill to a browser without adding infrastructure the project didn't need. None of these choices are exotic — the interesting engineering happened in how the pieces were wired together, not in picking unusual tools.</p>
 
   <h2>Frequently asked questions</h2>
   <div class="faq">
@@ -249,7 +265,7 @@
     </div>
     <div class="faq-item">
       <h3>How is this different from Amazon's "Just Walk Out" style systems?</h3>
-      <p>Conceptually similar in spirit using computer vision instead of manual scanning but at a completely different scale. Large "grab and go" systems typically use dozens of ceiling-mounted cameras and shelf-level sensors across a whole store. Smart Cart is a single-camera, cart-level prototype built to explore the same core problem on far more modest hardware.</p>
+      <p>Conceptually similar in spirit — using computer vision instead of manual scanning — but at a completely different scale. Large "grab and go" systems typically use dozens of ceiling-mounted cameras and shelf-level sensors across a whole store. Smart Cart is a single-camera, cart-level prototype built to explore the same core problem on far more modest hardware.</p>
     </div>
     <div class="faq-item">
       <h3>What was the biggest technical limitation?</h3>
@@ -257,7 +273,7 @@
     </div>
   </div>
 
-  <p>You can look through the code on <a href="https://github.com/nischalp001/smart_cart" target="_blank" rel="noopener noreferrer">GitHub</a> it's a good starting point if you're curious how a real-time detection-to-billing pipeline is wired together end to end.</p>
+  <p>You can look through the code on <a href="https://github.com/nischalp001/smart_cart" target="_blank" rel="noopener noreferrer">GitHub</a> — it's a good starting point if you're curious how a real-time detection-to-billing pipeline is wired together end to end.</p>
 
   <div class="tags">
     <span>Python</span><span>OpenCV</span><span>Computer Vision</span><span>Flask</span><span>Retail Tech</span>
@@ -275,7 +291,7 @@
     <div class="author-avatar">NM</div>
     <div class="author-info">
       <p class="author-name">Written by Niyati Malla</p>
-      <p class="author-bio">Niyati is a Kathmandu-based developer and designer who builds computer-vision, web, and mobile products end-to-end from model to interface. Smart Cart is one of several hands-on OpenCV and Python projects she's built and documented; she also maintains a facial-recognition attendance system and a React Native app for roadside assistance in Nepal.</p>
+      <p class="author-bio">Niyati is a Kathmandu-based developer and designer who builds computer-vision, web, and mobile products end-to-end — from model to interface. Smart Cart is one of several hands-on OpenCV and Python projects she's built and documented; she also maintains a facial-recognition attendance system and a React Native app for roadside assistance in Nepal.</p>
       <div class="author-links">
         <a href="https://github.com/niyati-9" target="_blank" rel="noopener noreferrer">GitHub</a>
         <a href="https://www.linkedin.com/in/niyati-malla-804802251/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
