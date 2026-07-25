@@ -5,12 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Facial Recognition Attendance System | Niyati Malla</title>
-<meta name="description" content="Notes from building a Django-based facial recognition attendance system how role-based access, REST APIs, and analytics kept it fast, fair, and privacy-conscious.">
+<meta name="description" content="Notes from building a Django-based facial recognition attendance system — how role-based access, REST APIs, and analytics kept it fast, fair, and privacy-conscious.">
 <meta name="keywords" content="facial recognition attendance, Django project, OpenCV face detection, REST API, HR tech, workplace privacy">
 <meta name="author" content="Niyati Malla">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://www.mallaniyati.com.np/blog-facial-attendance.html">
 <meta name="theme-color" content="#f4f3f1">
+
+<!-- Google Analytics (GA4) — replace G-XXXXXXXXXX with your real Measurement ID from analytics.google.com -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
 
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Niyati Malla">
@@ -25,6 +34,10 @@
 <meta name="twitter:title" content="Facial Recognition Attendance System">
 <meta name="twitter:description" content="How real-time object detection turns an ordinary shopping cart into a self-checkout counter.">
 
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231a1a1a'/%3E%3Ctext x='50' y='68' font-size='58' font-family='Georgia,serif' font-style='italic' fill='%2370f6a7' text-anchor='middle'%3En%3C/text%3E%3C/svg%3E">
 
 <script type="application/ld+json">
@@ -74,7 +87,10 @@
 </script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600&display=swap" media="print" onload="this.media='all'; this.onload=null;">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600&display=swap"></noscript>
 <style>
   :root{ --bg:#f4f3f1; --ink:#1a1a1a; --ink-soft:#4a4a48; --line:#d9d7d2; --accent:#70f6a7; --accent-soft:#a2eba8; }
   *{ box-sizing:border-box; }
@@ -204,46 +220,46 @@
 </div>
 
 <article class="body">
-  <p>Attendance sheets and swipe cards share the same weakness: someone can sign in on another person's behalf. The Facial Attendance System exists to close that gap a Django-based application that recognizes a person's face at check-in, logs the attendance record automatically, and gives administrators role-based dashboards to see it all in real time.</p>
+  <p>Attendance sheets and swipe cards share the same weakness: someone can sign in on another person's behalf. The Facial Attendance System exists to close that gap — a Django-based application that recognizes a person's face at check-in, logs the attendance record automatically, and gives administrators role-based dashboards to see it all in real time.</p>
 
   <p>Under the hood it's Python and Django for the application layer, OpenCV for face detection and recognition, and a REST API so the same system can plug into a mobile app, a kiosk, or an admin panel without rebuilding the logic three times.</p>
 
   <h2>Designing for three different users, not one</h2>
-  <p>The hardest part of this project wasn't the recognition model it was accepting that "attendance system" actually means three different products depending on who's using it. An employee wants a fast, frictionless check-in. An HR admin wants accurate records and the ability to correct mistakes. A system owner wants to control who can see what.</p>
+  <p>The hardest part of this project wasn't the recognition model — it was accepting that "attendance system" actually means three different products depending on who's using it. An employee wants a fast, frictionless check-in. An HR admin wants accurate records and the ability to correct mistakes. A system owner wants to control who can see what.</p>
 
   <p>That's why role-based access control ended up being as central to the architecture as the vision pipeline itself:</p>
   <ul>
-    <li><strong>Students</strong> can check in and view their own attendance history nothing more.</li>
-    <li><strong>Teachers</strong> can see team-level attendance and flag discrepancies.</li>
+    <li><strong>Standard users</strong> can check in and view their own attendance history — nothing more.</li>
+    <li><strong>Managers</strong> can see team-level attendance and flag discrepancies.</li>
     <li><strong>Admins</strong> can manage the face-enrollment database, adjust records, and pull analytics across the organization.</li>
   </ul>
 
   <h2>Where accuracy actually breaks down</h2>
-  <p>Face recognition on a curated dataset looks flawless in a demo. In a real office, it's a different story: overhead lighting changes throughout the day, people wear glasses one day and not the next, and a camera mounted at the wrong angle can undercut even a well-trained model. The system leans on OpenCV's face-detection pipeline first to reliably locate a face in the frame, then hands that region off to the recognition step splitting the problem in two made each half easier to tune and debug independently.</p>
+  <p>Face recognition on a curated dataset looks flawless in a demo. In a real office, it's a different story: overhead lighting changes throughout the day, people wear glasses one day and not the next, and a camera mounted at the wrong angle can undercut even a well-trained model. The system leans on OpenCV's face-detection pipeline first to reliably locate a face in the frame, then hands that region off to the recognition step — splitting the problem in two made each half easier to tune and debug independently.</p>
 
   <blockquote>A recognition system doesn't need to be perfect. It needs to know when it isn't sure, and hand that case to a human instead of guessing.</blockquote>
 
-  <p>Low-confidence matches don't silently log an incorrect entry they get flagged for manual review instead. That single design decision did more for trust in the system than any accuracy improvement to the model itself.</p>
+  <p>Low-confidence matches don't silently log an incorrect entry — they get flagged for manual review instead. That single design decision did more for trust in the system than any accuracy improvement to the model itself.</p>
 
   <h2>Privacy isn't an afterthought here</h2>
-  <p>A system that stores faces is a system that has to take data handling seriously. Enrollment images and derived face data are kept separate from general attendance logs, access to the face-enrollment database is restricted to admin roles only, and the REST API requires authentication on every endpoint no anonymous read access to who was present and when. Building this reinforced something I now treat as a rule rather than a suggestion: any system that touches biometric data needs its access model designed before a single line of the recognition code is written, not after.</p>
+  <p>A system that stores faces is a system that has to take data handling seriously. Enrollment images and derived face data are kept separate from general attendance logs, access to the face-enrollment database is restricted to admin roles only, and the REST API requires authentication on every endpoint — no anonymous read access to who was present and when. Building this reinforced something I now treat as a rule rather than a suggestion: any system that touches biometric data needs its access model designed before a single line of the recognition code is written, not after.</p>
 
   <h2>What real-time analytics actually enabled</h2>
-  <p>Once attendance data was flowing reliably, the more interesting question became what to do with it. The analytics layer surfaces patterns late arrivals by day of week, team-level attendance trends that a spreadsheet of check-in times never would have made visible on its own.</p>
+  <p>Once attendance data was flowing reliably, the more interesting question became what to do with it. The analytics layer surfaces patterns — late arrivals by day of week, team-level attendance trends — that a spreadsheet of check-in times never would have made visible on its own.</p>
 
   <h2>How I measured recognition accuracy before trusting it</h2>
-  <p>I didn't take the model's accuracy on faith. Before treating this as anything more than a prototype, I ran it against enrollment photos taken under three different conditions: consistent indoor lighting, harsher lighting with strong shadows, and with roughly a third of test subjects wearing glasses in some sessions and not others. The consistent-lighting condition performed reliably; the harsh-shadow condition is where confidence scores dropped enough to trigger the manual-review flag more often. That's the honest result, and it's the reason the system routes uncertain matches to a human reviewer rather than silently accepting a low-confidence guess a decision I made only after seeing how often the model actually needed it.</p>
+  <p>I didn't take the model's accuracy on faith. Before treating this as anything more than a prototype, I ran it against enrollment photos taken under three different conditions: consistent indoor lighting, harsher lighting with strong shadows, and with roughly a third of test subjects wearing glasses in some sessions and not others. The consistent-lighting condition performed reliably; the harsh-shadow condition is where confidence scores dropped enough to trigger the manual-review flag more often. That's the honest result, and it's the reason the system routes uncertain matches to a human reviewer rather than silently accepting a low-confidence guess — a decision I made only after seeing how often the model actually needed it.</p>
 
   <p>I also timed the full check-in flow, from face detection to a logged attendance record, because a system that takes ten seconds to recognize someone standing at a door defeats its own purpose during a busy morning rush. Splitting detection and recognition into two separate steps, rather than one combined model, made both faster to run and easier to profile individually when something was slow.</p>
 
   <h2>Why Django, and why REST instead of a monolith</h2>
-  <p>Django's built-in authentication and permissions system mapped almost directly onto the role-based access control this project needed, which meant less custom security code to write and audit myself. Exposing the core logic through a REST API, rather than building the recognition pipeline directly into a single web view, was a deliberate choice too it meant the same backend could serve a browser dashboard, a kiosk app, or a future mobile client without duplicating the authentication and recognition logic for each one.</p>
+  <p>Django's built-in authentication and permissions system mapped almost directly onto the role-based access control this project needed, which meant less custom security code to write and audit myself. Exposing the core logic through a REST API, rather than building the recognition pipeline directly into a single web view, was a deliberate choice too — it meant the same backend could serve a browser dashboard, a kiosk app, or a future mobile client without duplicating the authentication and recognition logic for each one.</p>
 
   <h2>Frequently asked questions</h2>
   <div class="faq">
     <div class="faq-item">
       <h3>Is facial recognition attendance legal to deploy at a workplace?</h3>
-      <p>This varies significantly by jurisdiction, and biometric data is regulated more strictly than most other personal data in many places. Anyone deploying a system like this needs to check local labor and data-protection law before rollout this project is a technical case study, not legal guidance.</p>
+      <p>This varies significantly by jurisdiction, and biometric data is regulated more strictly than most other personal data in many places. Anyone deploying a system like this needs to check local labor and data-protection law before rollout — this project is a technical case study, not legal guidance.</p>
     </div>
     <div class="faq-item">
       <h3>What happens when the system isn't confident about a match?</h3>

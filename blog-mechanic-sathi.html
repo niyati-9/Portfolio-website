@@ -12,6 +12,15 @@
 <link rel="canonical" href="https://www.mallaniyati.com.np/blog-mechanic-sathi.html">
 <meta name="theme-color" content="#f4f3f1">
 
+<!-- Google Analytics (GA4) — replace G-XXXXXXXXXX with your real Measurement ID from analytics.google.com -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
+
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Niyati Malla">
 <meta property="og:title" content="Designing Mechanic Sathi: Solving Roadside Emergencies for Travelers in Nepal">
@@ -25,6 +34,10 @@
 <meta name="twitter:title" content="Designing Mechanic Sathi">
 <meta name="twitter:description" content="How real-time object detection turns an ordinary shopping cart into a self-checkout counter.">
 
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231a1a1a'/%3E%3Ctext x='50' y='68' font-size='58' font-family='Georgia,serif' font-style='italic' fill='%2370f6a7' text-anchor='middle'%3En%3C/text%3E%3C/svg%3E">
 
 <script type="application/ld+json">
@@ -74,7 +87,10 @@
 </script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600&display=swap" media="print" onload="this.media='all'; this.onload=null;">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600&display=swap"></noscript>
 <style>
   :root{ --bg:#f4f3f1; --ink:#1a1a1a; --ink-soft:#4a4a48; --line:#d9d7d2; --accent:#70f6a7; --accent-soft:#a2eba8; }
   *{ box-sizing:border-box; }
@@ -204,41 +220,41 @@
 </div>
 
 <article class="body">
-  <p>Nepal's highways are dotted with small roadside workshops, but finding one when you actually need it bike broken down outside a town you don't know, no signal-strength to spare is a different problem entirely. Mechanic Sathi ("mechanic companion") is a React Native app built to solve exactly that: help travelers find verified roadside workshops, call for help, and do it all even when the connection drops out.</p>
+  <p>Nepal's highways are dotted with small roadside workshops, but finding one when you actually need it — bike broken down outside a town you don't know, no signal-strength to spare — is a different problem entirely. Mechanic Sathi ("mechanic companion") is a React Native app built to solve exactly that: help travelers find verified roadside workshops, call for help, and do it all even when the connection drops out.</p>
 
   <p>The stack is React Native with Expo for the app itself, and SQLite for local, offline-first storage. That last detail shaped almost every decision in the app.</p>
 
   <h2>Why offline-first wasn't optional</h2>
-  <p>Most app tutorials treat offline support as a nice-to-have a cache layer added once the "real" online-first version works. For Mechanic Sathi, that ordering had to be reversed. The people who need this app most are often exactly where connectivity is worst: mountain roads, rural stretches between towns, places where a data connection comes and goes with the terrain.</p>
+  <p>Most app tutorials treat offline support as a nice-to-have — a cache layer added once the "real" online-first version works. For Mechanic Sathi, that ordering had to be reversed. The people who need this app most are often exactly where connectivity is worst: mountain roads, rural stretches between towns, places where a data connection comes and goes with the terrain.</p>
 
-  <p>So workshop listings, ratings, and contact details are stored locally with SQLite from the start, synced opportunistically whenever a connection is available. A traveler searching for the nearest workshop isn't waiting on a network request that might time out they're querying data that's already sitting on their phone.</p>
+  <p>So workshop listings, ratings, and contact details are stored locally with SQLite from the start, synced opportunistically whenever a connection is available. A traveler searching for the nearest workshop isn't waiting on a network request that might time out — they're querying data that's already sitting on their phone.</p>
 
   <blockquote>The app has to assume the network is the exception, not the rule. Everything else follows from that one assumption.</blockquote>
 
   <h2>The SOS button is the whole point</h2>
-  <p>Search and ratings matter, but the feature that actually justifies the app's existence is the one-tap emergency SOS call. When something goes wrong on an unfamiliar road, nobody wants to navigate three menus to find a phone number. The SOS flow is intentionally minimal one visible action, no confirmation dialogs standing in the way, connecting a traveler to help as fast as the interface can get out of their way.</p>
+  <p>Search and ratings matter, but the feature that actually justifies the app's existence is the one-tap emergency SOS call. When something goes wrong on an unfamiliar road, nobody wants to navigate three menus to find a phone number. The SOS flow is intentionally minimal — one visible action, no confirmation dialogs standing in the way, connecting a traveler to help as fast as the interface can get out of their way.</p>
 
-  <p>Designing for a stressful, time-sensitive moment is a different discipline than designing for a browsing session. Every extra tap in a calm-state feature is a minor annoyance; every extra tap in an emergency flow is a real cost. That distinction shaped the whole interaction design the busiest, most detailed part of the app is the search and discovery experience, and the calmest, sparest part is the one you reach for when you're not calm at all.</p>
+  <p>Designing for a stressful, time-sensitive moment is a different discipline than designing for a browsing session. Every extra tap in a calm-state feature is a minor annoyance; every extra tap in an emergency flow is a real cost. That distinction shaped the whole interaction design — the busiest, most detailed part of the app is the search and discovery experience, and the calmest, sparest part is the one you reach for when you're not calm at all.</p>
 
   <h2>Verified listings, not crowdsourced guesses</h2>
-  <p>A directory of roadside workshops is only useful if it's trustworthy. Unverified listings wrong locations, workshops that closed years ago, inflated ratings would undermine the app faster than having no listings at all. Workshops in Mechanic Sathi go through a verification step before they're searchable, and ratings are tied to real completed interactions rather than open-ended reviews anyone could post.</p>
+  <p>A directory of roadside workshops is only useful if it's trustworthy. Unverified listings — wrong locations, workshops that closed years ago, inflated ratings — would undermine the app faster than having no listings at all. Workshops in Mechanic Sathi go through a verification step before they're searchable, and ratings are tied to real completed interactions rather than open-ended reviews anyone could post.</p>
 
   <h2>What building this taught me about designing for real conditions</h2>
-  <p>It's easy to design for the phone in your hand, on office Wi-Fi, at a comfortable desk. It's harder and more honest to design for a phone at 40% battery, patchy signal, and a rider who's stressed and in a hurry. Mechanic Sathi pushed me to test on exactly those conditions: airplane mode, low storage, a screen viewed at an angle in bright sunlight. Most of the "polish" work on this app wasn't visual it was making sure the core flow held up when everything around it was working against the user.</p>
+  <p>It's easy to design for the phone in your hand, on office Wi-Fi, at a comfortable desk. It's harder — and more honest — to design for a phone at 40% battery, patchy signal, and a rider who's stressed and in a hurry. Mechanic Sathi pushed me to test on exactly those conditions: airplane mode, low storage, a screen viewed at an angle in bright sunlight. Most of the "polish" work on this app wasn't visual — it was making sure the core flow held up when everything around it was working against the user.</p>
 
   <h2>How I actually tested the offline behavior</h2>
-  <p>I didn't just assume the offline-first design worked I tested it the way a traveler would actually hit it. That meant toggling airplane mode mid-search, force-closing the app while a sync was in progress, and walking between rooms with a phone set to weak-signal simulation to see how gracefully the app recovered once connectivity returned. The local SQLite queries stayed fast and consistent throughout; the harder problem was making sure a sync that got interrupted halfway through didn't leave the local database in a half-updated state. Handling that cleanly rather than assuming syncs always complete took more iteration than the search feature itself.</p>
+  <p>I didn't just assume the offline-first design worked — I tested it the way a traveler would actually hit it. That meant toggling airplane mode mid-search, force-closing the app while a sync was in progress, and walking between rooms with a phone set to weak-signal simulation to see how gracefully the app recovered once connectivity returned. The local SQLite queries stayed fast and consistent throughout; the harder problem was making sure a sync that got interrupted halfway through didn't leave the local database in a half-updated state. Handling that cleanly — rather than assuming syncs always complete — took more iteration than the search feature itself.</p>
 
-  <p>I also timed the SOS flow specifically, since that's the one interaction where speed genuinely matters more than anything else in the app. From tapping the button to a call being placed, the goal was to minimize every intermediate step no loading spinner standing between a stressed user and a phone call they need to make right now.</p>
+  <p>I also timed the SOS flow specifically, since that's the one interaction where speed genuinely matters more than anything else in the app. From tapping the button to a call being placed, the goal was to minimize every intermediate step — no loading spinner standing between a stressed user and a phone call they need to make right now.</p>
 
   <h2>Why Expo and SQLite were the right fit, not just the easy fit</h2>
-  <p>Expo's managed workflow meant less time wiring up native build tooling and more time on the actual offline-sync and SOS logic that makes this app different from a generic directory listing. SQLite was the more deliberate choice: it's a real embedded relational database rather than a simple key-value cache, which mattered once workshop search needed filtering by location, rating, and service type the kind of querying that a flat local cache handles poorly but a proper local database handles natively.</p>
+  <p>Expo's managed workflow meant less time wiring up native build tooling and more time on the actual offline-sync and SOS logic that makes this app different from a generic directory listing. SQLite was the more deliberate choice: it's a real embedded relational database rather than a simple key-value cache, which mattered once workshop search needed filtering by location, rating, and service type — the kind of querying that a flat local cache handles poorly but a proper local database handles natively.</p>
 
   <h2>Frequently asked questions</h2>
   <div class="faq">
     <div class="faq-item">
       <h3>Does Mechanic Sathi work with zero signal at all, or just weak signal?</h3>
-      <p>Search, browsing, and viewing already-synced workshop details work with zero connectivity, since that data lives locally in SQLite. Actions that need a live connection like placing the SOS call itself or pulling brand-new listings obviously still need at least a phone signal to complete.</p>
+      <p>Search, browsing, and viewing already-synced workshop details work with zero connectivity, since that data lives locally in SQLite. Actions that need a live connection — like placing the SOS call itself or pulling brand-new listings — obviously still need at least a phone signal to complete.</p>
     </div>
     <div class="faq-item">
       <h3>How are workshops verified before they appear in the app?</h3>
@@ -246,7 +262,7 @@
     </div>
     <div class="faq-item">
       <h3>Why build this specifically for Nepal instead of a general roadside-assistance app?</h3>
-      <p>Rural and mountain roads in Nepal have connectivity gaps that a lot of assistance apps built for denser, better-connected markets don't design around at all. Solving for that specific condition offline-first, not offline-tolerant was the actual point of the project.</p>
+      <p>Rural and mountain roads in Nepal have connectivity gaps that a lot of assistance apps built for denser, better-connected markets don't design around at all. Solving for that specific condition — offline-first, not offline-tolerant — was the actual point of the project.</p>
     </div>
   </div>
 
