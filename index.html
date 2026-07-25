@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- ================= SEO: core meta ================= -->
-<title>Niyati Malla | Creative Developer</title>
-<meta name="description" content="Niyati Malla is a Kathmandu-based developer and designer building AI-powered apps, computer-vision tools, and clean web & mobile products end-to-end from database schema to pixel-perfect UI.">
+<title>Niyati Malla | AI & Computer Vision Developer, Kathmandu</title>
+<meta name="description" content="Niyati Malla is a Kathmandu-based developer and designer building AI-powered apps, computer-vision tools, and clean web & mobile products end-to-end — from database schema to pixel-perfect UI.">
 <meta name="keywords" content="Niyati Malla, creative developer Nepal, digital designer Kathmandu, computer vision developer, React Native developer Nepal, Django developer, full stack developer Kathmandu, portfolio">
 <meta name="author" content="Niyati Malla">
 <meta name="robots" content="index, follow, max-image-preview:large">
@@ -18,7 +18,7 @@
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  gtag('config', 'G-XXXXXXXXXX');
+  gtag('config', 'G-DY51BXD66W');
 </script>
 
 <!-- ================= SEO: Open Graph / social ================= -->
@@ -314,6 +314,8 @@
     display:flex; gap: 28px; overflow-x:auto;
     padding: 4px 48px 64px; cursor: grab;
     scrollbar-width: none;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
   }
   .projects-carousel::-webkit-scrollbar{ display:none; }
   .projects-carousel.dragging{ cursor: grabbing; scroll-behavior: auto; }
@@ -604,7 +606,7 @@
   <span class="deco d3">✳︎</span>
   <span class="deco d4">⋱︎</span>
   <h1 class="reveal">hi, I'm <span class="i">Niyati</span><br>Creative<br>D<span class="i">i</span>gital Des<span class="i">i</span>gner.</h1>
-  <div class="scroll-note reveal">(scroll down)</div>
+  <div class="scroll-note reveal">(scroll down &amp; explore)</div>
   <div class="blob"></div>
 </section>
 
@@ -876,6 +878,7 @@
     }
     measure();
     window.addEventListener('resize', measure);
+    window.addEventListener('load', measure);
 
     const scrollStep = () => (carousel.querySelector('.project-card')?.offsetWidth || 340) + 28;
 
@@ -884,7 +887,7 @@
     const SPEED = 0.7; // px per frame — steady, clearly visible auto-scroll
 
     function tick(){
-      if(!autoPaused && !isDown){
+      if(!reducedMotion && !autoPaused && !isDown){
         carousel.scrollLeft += SPEED;
         if(halfWidth && carousel.scrollLeft >= halfWidth){
           carousel.scrollLeft -= halfWidth;
@@ -896,8 +899,33 @@
 
     carousel.addEventListener('mouseenter', () => { autoPaused = true; });
     carousel.addEventListener('mouseleave', () => { autoPaused = false; });
-    carousel.addEventListener('touchstart', () => { autoPaused = true; }, { passive: true });
-    carousel.addEventListener('touchend', () => { setTimeout(() => autoPaused = false, 1200); });
+
+    // On iPhone/touch: a finger merely passing over the carousel while scrolling
+    // the *page* vertically shouldn't pause the drift — only pause when the
+    // touch is actually a horizontal swipe on the carousel itself.
+    let touchStartX = 0, touchStartY = 0, touchIsHorizontal = false, resumeTimer = null;
+    carousel.addEventListener('touchstart', (e) => {
+      const t = e.touches[0];
+      touchStartX = t.clientX; touchStartY = t.clientY; touchIsHorizontal = false;
+    }, { passive: true });
+    carousel.addEventListener('touchmove', (e) => {
+      const t = e.touches[0];
+      const dx = Math.abs(t.clientX - touchStartX);
+      const dy = Math.abs(t.clientY - touchStartY);
+      if(dx > dy && dx > 6){
+        touchIsHorizontal = true;
+        autoPaused = true;
+      }
+    }, { passive: true });
+    carousel.addEventListener('touchend', () => {
+      clearTimeout(resumeTimer);
+      if(touchIsHorizontal){
+        resumeTimer = setTimeout(() => { autoPaused = false; }, 1600);
+      } else {
+        // it was just a vertical scroll passing through — resume right away
+        autoPaused = false;
+      }
+    });
 
     prevBtn?.addEventListener('click', () => {
       autoPaused = true;
@@ -996,7 +1024,7 @@
     } catch(err){
       btn.innerHTML = original;
       btn.disabled = false;
-      statusEl.textContent = 'Something went wrong, please email me directly instead.';
+      statusEl.textContent = 'Something went wrong — please email me directly instead.';
       statusEl.classList.add('error');
     }
   });
