@@ -310,22 +310,29 @@
   .work-nav button:disabled:hover{ background: var(--bg); color: var(--ink); border-color: var(--line); transform: none; }
 
   /* ---------- PROJECT CARD CAROUSEL ---------- */
+  /* Native scroll container: overflow-x:auto means manual dragging/swiping
+     is handled entirely by the browser's own touch-scrolling, which is
+     guaranteed to work identically on every platform including iOS Safari —
+     there is no custom JS in the loop that can fail or get hijacked. */
   .projects-carousel{
-    display:flex; gap: 28px; overflow: hidden;
-    padding: 4px 48px 64px; cursor: grab;
-    touch-action: pan-y;
+    display:flex; gap: 28px;
+    overflow-x: auto; overflow-y: hidden;
+    padding: 4px 48px 64px;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
-    will-change: transform;
-    -webkit-user-select: none; user-select: none;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
-  .projects-carousel.dragging{ cursor: grabbing; }
+  .projects-carousel::-webkit-scrollbar{ display: none; }
+  @media (hover: hover) and (pointer: fine){
+    .projects-carousel{ cursor: grab; }
+    .projects-carousel.dragging{ cursor: grabbing; }
+  }
 
   .projects-track{
     display:flex;
     gap: 28px;
     width: max-content;
-    will-change: transform;
   }
 
   .project-card{
@@ -935,39 +942,26 @@
     });
   });
 
-  // Project carousel: one unified implementation (desktop + mobile + iOS Safari).
+  // Project carousel: native-scroll implementation (desktop + mobile + iOS Safari).
   //
-  // Why not native `scrollLeft`? iOS Safari can silently ignore or delay
-  // repainting a *native* scroll position when it's changed by JS instead of
-  // a real finger gesture, which made auto-drift unreliable on iPhone.
-  // Instead everything — auto-drift, arrow clicks, and drag/swipe — drives a
-  // single `offset` number that's applied as a `translate3d` transform on an
-  // inner track. There's only one source of truth, so nothing can fight it
-  // and nothing for iOS to drop.
+  // Manual scrolling is plain `overflow-x: auto` on the container — the
+  // browser's own touch-scrolling handles every finger gesture, momentum,
+  // and bounce, so there's no custom drag code that can be hijacked or
+  // silently dropped by iOS Safari.
   //
-  // Dragging is handled with Pointer Events, which unify mouse, touch, and
-  // pen into one API and are what modern Safari/Chrome/Firefox/Edge all
-  // support. Horizontal panning is entirely custom (JS-driven transform), so
-  // `touch-action: pan-y` on the container tells the browser "only handle
-  // vertical gestures yourself" — the browser then leaves horizontal drags
-  // alone for JS to read while still scrolling the page natively on a
-  // vertical swipe. That's the standard, reliable way to get an
-  // iOS-Safari-safe horizontal drag without fighting the page scroll.
+  // Auto-drift and the arrow buttons both just move the *same* native
+  // `scrollLeft` property that a manual swipe would move, so nothing ever
+  // fights over two different sources of truth.
   try {
   const carousel = document.getElementById('projectsCarousel');
   const prevBtn = document.getElementById('carPrev');
   const nextBtn = document.getElementById('carNext');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // Only real mouse/trackpad devices get hover-to-pause. iOS Safari fires a
-  // *synthetic* mouseenter (with no matching mouseleave) the first time you
-  // tap a link, as part of its legacy hover emulation — without this guard
-  // that single tap would set autoPaused = true forever and the auto-drift
-  // would look permanently "stuck" on iPhone after the first touch.
   const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   if(carousel){
-    // Move the existing cards into a track we can transform, then duplicate
-    // the set once so the drift/drag can loop seamlessly forever.
+    // Move the existing cards into a track, then duplicate the set once so
+    // scrolling can loop seamlessly forever.
     const track = document.createElement('div');
     track.className = 'projects-track';
 
@@ -993,15 +987,8 @@
       document.fonts.ready.then(measure).catch(() => {});
     }
 
-    let offset = 0;
-    function applyOffset(){
-      offset = ((offset % half) + half) % half; // wrap for seamless infinite loop
-      track.style.transform = `translate3d(${-offset}px,0,0)`;
-    }
-
     const SPEED = reduceMotion ? 0.45 : 0.7; // px per frame, steady auto-drift speed
-    let autoPaused = false;  // paused by hover / arrow click / a finished drag
-    let dragging = false;    // true only once a drag is confirmed horizontal
+    let autoPaused = false;
     let resumeTimer = null;
 
     function pauseThenResume(delay){
@@ -1011,98 +998,75 @@
     }
 
     (function drift(){
-      if(!autoPaused && !dragging){
-        offset += SPEED;
-        applyOffset();
+      if(!autoPaused){
+        carousel.scrollLeft += SPEED;
+        if(half > 0 && carousel.scrollLeft >= half){
+          carousel.scrollLeft -= half; // wrap for seamless infinite loop
+        }
       }
       requestAnimationFrame(drift);
     })();
 
-    // Pause while a mouse is hovering (desktop only — touch has no hover).
+    // Pause on hover (desktop only — touch devices don't have real hover).
     if(canHover){
-      carousel.addEventListener('mouseenter', () => { if(!dragging) autoPaused = true; });
-      carousel.addEventListener('mouseleave', () => { if(!dragging){ clearTimeout(resumeTimer); autoPaused = false; } });
+      carousel.addEventListener('mouseenter', () => { autoPaused = true; clearTimeout(resumeTimer); });
+      carousel.addEventListener('mouseleave', () => { clearTimeout(resumeTimer); autoPaused = false; });
     }
 
-    // ---- Arrow buttons: step by one card width, smoothly ----
-    const cardStep = () => (carousel.querySelector('.project-card')?.offsetWidth || 340) + 28;
-    function jump(delta){
-      pauseThenResume(1600);
-      track.style.transition = 'transform .5s cubic-bezier(.22,1,.36,1)';
-      offset += delta;
-      applyOffset();
-      window.setTimeout(() => { track.style.transition = ''; }, 520);
-    }
-    prevBtn?.addEventListener('click', () => jump(-cardStep()));
-    nextBtn?.addEventListener('click', () => jump(cardStep()));
-
-    // ---- Unified drag/swipe via Pointer Events (mouse + touch + pen) ----
-    let pointerId = null;
-    let axisLocked = null; // 'x' | 'y' | null until the gesture direction is known
-    let startX = 0, startY = 0, startOffset = 0, moved = false;
-    const AXIS_THRESHOLD = 6; // px of movement before committing to an axis
-
+    // Pause the instant any pointer (mouse, touch, or pen) touches the
+    // strip, and resume a bit after it lets go — the extra delay covers
+    // iOS's momentum scroll, which keeps moving for a moment after the
+    // finger lifts.
+    let mouseDrag = null;
     carousel.addEventListener('pointerdown', (e) => {
-      if(e.pointerType === 'mouse' && e.button !== 0) return; // left click only
-      pointerId = e.pointerId;
-      startX = e.clientX; startY = e.clientY; startOffset = offset;
-      axisLocked = null; moved = false;
+      autoPaused = true;
       clearTimeout(resumeTimer);
+      if(e.pointerType === 'mouse'){
+        // Desktop mice don't get native click-and-drag scrolling for free,
+        // so add it manually — this is plain, reliable scrollLeft
+        // manipulation on desktop (the iOS-specific scrollLeft quirks this
+        // rewrite works around don't apply to desktop browsers).
+        mouseDrag = { startX: e.clientX, startScroll: carousel.scrollLeft, id: e.pointerId };
+        carousel.classList.add('dragging');
+        try{ carousel.setPointerCapture(e.pointerId); }catch(err){}
+      }
     });
-
     carousel.addEventListener('pointermove', (e) => {
-      if(e.pointerId !== pointerId) return;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-
-      if(axisLocked === null){
-        if(Math.abs(dx) > AXIS_THRESHOLD || Math.abs(dy) > AXIS_THRESHOLD){
-          axisLocked = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
-          if(axisLocked === 'x'){
-            dragging = true;
-            carousel.classList.add('dragging');
-            // Pointer capture keeps delivering move events to this element
-            // even if the finger/cursor leaves it mid-drag (iOS Safari
-            // needs this for a smooth, uninterrupted swipe).
-            try{ carousel.setPointerCapture(pointerId); }catch(err){}
-          } else {
-            // Vertical intent — stop tracking, let the page scroll natively.
-            pointerId = null;
-          }
-        }
-      }
-
-      if(axisLocked === 'x'){
-        moved = true;
-        offset = startOffset - dx;
-        applyOffset();
-        // Once we've committed to a horizontal drag, stop iOS Safari from
-        // doing anything else with the touch (like starting its own link
-        // drag/callout gesture), which would otherwise cancel our pointer
-        // sequence mid-swipe.
-        if(e.cancelable) e.preventDefault();
+      if(mouseDrag && e.pointerId === mouseDrag.id){
+        carousel.scrollLeft = mouseDrag.startScroll - (e.clientX - mouseDrag.startX);
       }
     });
-
-    function endDrag(e){
-      if(pointerId === null || (e && e.pointerId !== pointerId)) return;
-      if(dragging){
-        try{ carousel.releasePointerCapture(pointerId); }catch(err){}
+    function endInteraction(e){
+      if(mouseDrag && (!e || e.pointerId === mouseDrag.id)){
+        try{ carousel.releasePointerCapture(mouseDrag.id); }catch(err){}
         carousel.classList.remove('dragging');
-        pauseThenResume(1400);
+        mouseDrag = null;
       }
-      dragging = false;
-      pointerId = null;
-      axisLocked = null;
+      pauseThenResume(1600);
     }
-    carousel.addEventListener('pointerup', endDrag);
-    carousel.addEventListener('pointercancel', endDrag);
-    carousel.addEventListener('pointerleave', (e) => { if(!dragging) endDrag(e); });
+    carousel.addEventListener('pointerup', endInteraction);
+    carousel.addEventListener('pointercancel', endInteraction);
+    carousel.addEventListener('pointerleave', (e) => { if(mouseDrag) endInteraction(e); });
+    carousel.addEventListener('wheel', () => pauseThenResume(1600), { passive: true });
 
-    // Prevent the click-through to a card link right after an actual drag.
-    carousel.addEventListener('click', (e) => {
-      if(moved){ e.preventDefault(); moved = false; }
-    }, true);
+    // ---- Arrow buttons: hand-rolled smooth tween of scrollLeft ----
+    const cardStep = () => (carousel.querySelector('.project-card')?.offsetWidth || 340) + 28;
+    function animateScrollBy(delta, duration = 500){
+      pauseThenResume(1800);
+      const start = carousel.scrollLeft;
+      const startTime = performance.now();
+      function tick(now){
+        const p = Math.min(1, (now - startTime) / duration);
+        const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
+        let next = start + delta * eased;
+        if(half > 0){ next = ((next % half) + half) % half; }
+        carousel.scrollLeft = next;
+        if(p < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+    prevBtn?.addEventListener('click', () => animateScrollBy(-cardStep()));
+    nextBtn?.addEventListener('click', () => animateScrollBy(cardStep()));
   }
   } catch(err){
     console.error('Project carousel setup failed, continuing without it:', err);
