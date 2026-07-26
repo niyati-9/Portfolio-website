@@ -329,19 +329,8 @@
   }
 
   .projects-carousel.mobile-marquee{
-    overflow: hidden;
     cursor: default;
-    touch-action: pan-y;
-  }
-
-  .projects-carousel.mobile-marquee .projects-track{
-    animation: marquee 34s linear infinite;
-    will-change: transform;
-  }
-
-  @keyframes marquee{
-    from{ transform: translate3d(0, 0, 0); }
-    to{ transform: translate3d(-50%, 0, 0); }
+    touch-action: pan-x;
   }
 
   .project-card{
@@ -438,7 +427,7 @@
      while scrolling and causes jank on phones. Hover effects also don't make
      sense on touch (they'd just stick after a tap), so drop both there. */
   @media (hover: none), (pointer: coarse){
-    .projects-track{ gap: 18px; }
+    .projects-carousel{ gap: 18px; }
     .card-visual .glow{ filter: blur(46px); opacity: .28; }
     .card-visual .dot{ display: none; }
     .project-card{ transition: border-color .3s ease; }
@@ -446,6 +435,15 @@
     .project-card:hover .card-visual .glow{ opacity: .35; transform: none; }
     .project-card:hover .card-visual .glyph{ transform: none; }
     .project-card:hover .card-tech span{ border-color: var(--line); color: var(--ink-soft); }
+    .project-card:active .card-visual .glow,
+    .project-card:focus-visible .card-visual .glow{
+      opacity: .8;
+      transform: scale(1.15);
+    }
+    .project-card:active .card-visual .glyph,
+    .project-card:focus-visible .card-visual .glyph{
+      transform: scale(1.08) rotate(6deg);
+    }
     .card-view:hover{ border-color: transparent; gap: 8px; }
     .card-view:hover::after{ transform: none; }
   }
@@ -914,36 +912,74 @@
     };
 
     if(touchLike){
-      const track = document.createElement('div');
-      track.className = 'projects-track';
-
       const originalCards = Array.from(carousel.children);
-      originalCards.forEach(card => track.appendChild(card));
       originalCards.forEach(card => {
         const clone = card.cloneNode(true);
         clone.setAttribute('aria-hidden', 'true');
         clone.setAttribute('tabindex', '-1');
-        track.appendChild(clone);
+        carousel.appendChild(clone);
       });
 
-      carousel.appendChild(track);
       carousel.classList.add('mobile-marquee');
 
-      let pauseTimer = null;
-      const pauseMarquee = () => {
-        track.style.animationPlayState = 'paused';
-        clearTimeout(pauseTimer);
-      };
-      const resumeMarquee = () => {
-        clearTimeout(pauseTimer);
-        pauseTimer = setTimeout(() => {
-          track.style.animationPlayState = 'running';
-        }, 500);
-      };
+      let halfWidth = 0;
+      function measure(){
+        halfWidth = carousel.scrollWidth / 2;
+      }
+      measure();
+      window.addEventListener('resize', measure);
+      window.addEventListener('load', measure);
 
-      carousel.addEventListener('touchstart', pauseMarquee, { passive: true });
-      carousel.addEventListener('touchend', resumeMarquee);
-      carousel.addEventListener('touchcancel', resumeMarquee);
+      const scrollStep = () => (carousel.querySelector('.project-card')?.offsetWidth || 340) + 18;
+
+      let autoPaused = false;
+      let touchPaused = false;
+      let touchStartX = 0, touchStartY = 0, touchIsHorizontal = false, resumeTimer = null;
+      const SPEED = 0.55;
+
+      function tick(){
+        if(!autoPaused && !touchPaused){
+          carousel.scrollLeft += SPEED;
+          wrapScroll();
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+
+      carousel.addEventListener('touchstart', (e) => {
+        const t = e.touches[0];
+        touchStartX = t.clientX; touchStartY = t.clientY; touchIsHorizontal = false;
+        touchPaused = true;
+      }, { passive: true });
+      carousel.addEventListener('touchmove', (e) => {
+        const t = e.touches[0];
+        const dx = Math.abs(t.clientX - touchStartX);
+        const dy = Math.abs(t.clientY - touchStartY);
+        if(dx > dy && dx > 6){
+          touchIsHorizontal = true;
+        }
+      }, { passive: true });
+      carousel.addEventListener('touchend', () => {
+        clearTimeout(resumeTimer);
+        resumeTimer = setTimeout(() => { touchPaused = false; }, touchIsHorizontal ? 1200 : 200);
+      });
+      carousel.addEventListener('touchcancel', () => {
+        clearTimeout(resumeTimer);
+        touchPaused = false;
+      });
+
+      prevBtn?.addEventListener('click', () => {
+        autoPaused = true;
+        carousel.scrollLeft -= scrollStep();
+        wrapScroll();
+        setTimeout(() => autoPaused = false, 1200);
+      });
+      nextBtn?.addEventListener('click', () => {
+        autoPaused = true;
+        carousel.scrollLeft += scrollStep();
+        wrapScroll();
+        setTimeout(() => autoPaused = false, 1200);
+      });
     } else {
       // Duplicate the card set once so the drift can loop seamlessly
       const originalCards = Array.from(carousel.children);
