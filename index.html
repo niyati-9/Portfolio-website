@@ -315,7 +315,6 @@
     padding: 4px 48px 64px; cursor: grab;
     scrollbar-width: none;
     touch-action: pan-x;
-    -webkit-overflow-scrolling: touch;
     will-change: scroll-position;
   }
   .projects-carousel::-webkit-scrollbar{ display:none; }
@@ -643,7 +642,7 @@
   <span class="deco d3">✳︎</span>
   <span class="deco d4">⋱︎</span>
   <h1 class="reveal">hi, I'm <span class="i">Niyati</span><br>Creative<br>D<span class="i">i</span>gital Des<span class="i">i</span>gner.</h1>
-  <div class="scroll-note reveal">(scroll down &amp; explore)</div>
+  <div class="scroll-note reveal">(scroll down)</div>
   <div class="blob"></div>
 </section>
 
@@ -911,6 +910,14 @@
     };
 
     if(touchLike){
+      // ---- Mobile / touch: iOS-safe auto-drift ----
+      // NOTE: iOS Safari will happily accept programmatic scrollLeft/scrollBy()
+      // updates but sometimes won't repaint the visible scroll position until
+      // the next real touch/scroll gesture, especially when the container had
+      // `-webkit-overflow-scrolling: touch` (removed from CSS) or when the
+      // update loop is driven by setInterval instead of requestAnimationFrame.
+      // Using rAF (tied to the render loop) + pausing on real touch input
+      // fixes the "manual drag works, auto-drift doesn't" issue on iPhone.
       const originalCards = Array.from(carousel.children);
       originalCards.forEach(card => {
         const clone = card.cloneNode(true);
@@ -920,24 +927,31 @@
       });
 
       carousel.classList.add('mobile-marquee');
-
-      let halfWidth = 0;
-      function measure(){
-        halfWidth = carousel.scrollWidth / 2;
-      }
-      measure();
-      window.addEventListener('resize', measure);
-      window.addEventListener('load', measure);
-
-      const scrollStep = () => (carousel.querySelector('.project-card')?.offsetWidth || 340) + 18;
-
-      const SPEED = 0.8;
       carousel.style.scrollBehavior = 'auto';
 
-      setInterval(() => {
-        carousel.scrollBy({ left: SPEED, top: 0, behavior: 'auto' });
-        wrapScroll();
-      }, 16);
+      const SPEED = 0.8; // px per frame
+      let paused = false;
+      let resumeTimer = null;
+
+      carousel.addEventListener('touchstart', () => {
+        paused = true;
+        clearTimeout(resumeTimer);
+      }, { passive: true });
+
+      carousel.addEventListener('touchend', () => {
+        clearTimeout(resumeTimer);
+        resumeTimer = setTimeout(() => { paused = false; }, 1200);
+      }, { passive: true });
+
+      function driftMobile(){
+        if(!paused){
+          carousel.scrollLeft += SPEED;
+          wrapScroll();
+        }
+        requestAnimationFrame(driftMobile);
+      }
+      requestAnimationFrame(driftMobile);
+
     } else {
       // Duplicate the card set once so the drift can loop seamlessly
       const originalCards = Array.from(carousel.children);
@@ -973,33 +987,6 @@
 
       carousel.addEventListener('mouseenter', () => { autoPaused = true; });
       carousel.addEventListener('mouseleave', () => { autoPaused = false; });
-
-      // On iPhone/touch: a finger merely passing over the carousel while scrolling
-      // the *page* vertically shouldn't pause the drift — only pause when the
-      // touch is actually a horizontal swipe on the carousel itself.
-      let touchStartX = 0, touchStartY = 0, touchIsHorizontal = false, resumeTimer = null;
-      carousel.addEventListener('touchstart', (e) => {
-        const t = e.touches[0];
-        touchStartX = t.clientX; touchStartY = t.clientY; touchIsHorizontal = false;
-      }, { passive: true });
-      carousel.addEventListener('touchmove', (e) => {
-        const t = e.touches[0];
-        const dx = Math.abs(t.clientX - touchStartX);
-        const dy = Math.abs(t.clientY - touchStartY);
-        if(dx > dy && dx > 6){
-          touchIsHorizontal = true;
-          autoPaused = true;
-        }
-      }, { passive: true });
-      carousel.addEventListener('touchend', () => {
-        clearTimeout(resumeTimer);
-        if(touchIsHorizontal){
-          resumeTimer = setTimeout(() => { autoPaused = false; }, 1600);
-        } else {
-          // it was just a vertical scroll passing through — resume right away
-          autoPaused = false;
-        }
-      });
 
       prevBtn?.addEventListener('click', () => {
         autoPaused = true;
