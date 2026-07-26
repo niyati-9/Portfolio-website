@@ -893,7 +893,36 @@
     });
   });
 
+  // Scroll reveal — runs early and independently so a carousel issue can
+  // never prevent the rest of the page (hero, about, blog, contact) from
+  // becoming visible.
+  const revealEls = document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window){
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if(entry.isIntersecting){
+          entry.target.classList.add('in');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    revealEls.forEach(el => io.observe(el));
+  } else {
+    // Fallback: no IntersectionObserver support — just show everything.
+    revealEls.forEach(el => el.classList.add('in'));
+  }
+
+  // Smooth anchor scroll (desktop nav)
+  document.querySelectorAll('header nav a[href^="#"]').forEach(a => {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if(target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
   // Project carousel: continuously drifts sideways, plus arrow buttons + drag-to-scroll
+  try {
   const carousel = document.getElementById('projectsCarousel');
   const prevBtn = document.getElementById('carPrev');
   const nextBtn = document.getElementById('carNext');
@@ -1082,27 +1111,9 @@
       carousel.addEventListener('click', (e) => { if(moved){ e.preventDefault(); moved = false; } }, true);
     }
   }
-
-  // Scroll reveal
-  const revealEls = document.querySelectorAll('.reveal');
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if(entry.isIntersecting){
-        entry.target.classList.add('in');
-        io.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.15 });
-  revealEls.forEach(el => io.observe(el));
-
-  // Smooth anchor scroll (desktop nav)
-  document.querySelectorAll('header nav a[href^="#"]').forEach(a => {
-    a.addEventListener('click', (e) => {
-      e.preventDefault();
-      const target = document.querySelector(a.getAttribute('href'));
-      if(target) target.scrollIntoView({ behavior: 'smooth' });
-    });
-  });
+  } catch(err){
+    console.error('Project carousel setup failed, continuing without it:', err);
+  }
 
   // Contact form — sends real email via Formspree, without leaving the page
   const form = document.getElementById('contactForm');
