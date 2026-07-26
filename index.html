@@ -976,7 +976,7 @@
       track.style.transform = `translate3d(${-offset}px,0,0)`;
     }
 
-    const SPEED = 0.7; // px per frame, steady auto-drift speed
+    const SPEED = reduceMotion ? 0.45 : 0.7; // px per frame, steady auto-drift speed
     let autoPaused = false;  // paused by hover / arrow click / a finished drag
     let dragging = false;    // true only once a drag is confirmed horizontal
     let resumeTimer = null;
@@ -987,15 +987,13 @@
       resumeTimer = setTimeout(() => { autoPaused = false; }, delay);
     }
 
-    if(!reduceMotion){
-      (function drift(){
-        if(!autoPaused && !dragging){
-          offset += SPEED;
-          applyOffset();
-        }
-        requestAnimationFrame(drift);
-      })();
-    }
+    (function drift(){
+      if(!autoPaused && !dragging){
+        offset += SPEED;
+        applyOffset();
+      }
+      requestAnimationFrame(drift);
+    })();
 
     // Pause while a mouse is hovering (desktop only — touch has no hover).
     carousel.addEventListener('mouseenter', () => { if(!dragging) autoPaused = true; });
