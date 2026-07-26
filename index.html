@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- ================= SEO: core meta ================= -->
-<title>Niyati Malla | Creative Digital Designer</title>
+<title>Niyati Malla | Creative Designer</title>
 <meta name="description" content="Niyati Malla is a Kathmandu-based developer and designer building AI-powered apps, computer-vision tools, and clean web & mobile products end-to-end — from database schema to pixel-perfect UI.">
 <meta name="keywords" content="Niyati Malla, creative developer Nepal, digital designer Kathmandu, computer vision developer, React Native developer Nepal, Django developer, full stack developer Kathmandu, portfolio">
 <meta name="author" content="Niyati Malla">
@@ -316,6 +316,7 @@
     scrollbar-width: none;
     touch-action: pan-x;
     -webkit-overflow-scrolling: touch;
+    will-change: scroll-position;
   }
   .projects-carousel::-webkit-scrollbar{ display:none; }
   .projects-carousel.dragging{ cursor: grabbing; scroll-behavior: auto; }
@@ -409,6 +410,20 @@
   .card-view::after{ content:'↗︎'; font-family:'Inter', sans-serif; font-style: normal; font-size: 13px; transition: transform .3s ease; }
   .card-view:hover{ border-color: var(--ink); gap: 12px; }
   .card-view:hover::after{ transform: translate(2px,-2px); }
+
+  /* Touch devices: the always-on blur() on card glows is expensive to paint
+     while scrolling and causes jank on phones. Hover effects also don't make
+     sense on touch (they'd just stick after a tap), so drop both there. */
+  @media (hover: none), (pointer: coarse){
+    .card-visual .glow{ filter: none; opacity: .35; }
+    .project-card{ transition: border-color .3s ease; }
+    .project-card:hover{ transform: none; box-shadow: none; }
+    .project-card:hover .card-visual .glow{ opacity: .35; transform: none; }
+    .project-card:hover .card-visual .glyph{ transform: none; }
+    .project-card:hover .card-tech span{ border-color: var(--line); color: var(--ink-soft); }
+    .card-view:hover{ border-color: transparent; gap: 8px; }
+    .card-view:hover::after{ transform: none; }
+  }
 
   /* ---------- ABOUT ---------- */
   .about{ display:flex; border-top:1px solid var(--line); }
@@ -606,7 +621,7 @@
   <span class="deco d3">✳︎</span>
   <span class="deco d4">⋱︎</span>
   <h1 class="reveal">hi, I'm <span class="i">Niyati</span><br>Creative<br>D<span class="i">i</span>gital Des<span class="i">i</span>gner.</h1>
-  <div class="scroll-note reveal">(scroll down &amp; explore)</div>
+  <div class="scroll-note reveal">(scroll down)</div>
   <div class="blob"></div>
 </section>
 
