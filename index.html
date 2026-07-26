@@ -311,25 +311,21 @@
 
   /* ---------- PROJECT CARD CAROUSEL ---------- */
   .projects-carousel{
-    display:flex; gap: 28px; overflow-x:auto;
+    display:flex; gap: 28px; overflow: hidden;
     padding: 4px 48px 64px; cursor: grab;
-    scrollbar-width: none;
-    touch-action: pan-x;
-    will-change: scroll-position;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    will-change: transform;
+    -webkit-user-select: none; user-select: none;
   }
-  .projects-carousel::-webkit-scrollbar{ display:none; }
-  .projects-carousel.dragging{ cursor: grabbing; scroll-behavior: auto; }
+  .projects-carousel.dragging{ cursor: grabbing; }
 
   .projects-track{
     display:flex;
     gap: 28px;
     width: max-content;
-  }
-
-  .projects-carousel.mobile-marquee{
-    cursor: default;
-    overflow: hidden;
-    touch-action: pan-y;
+    will-change: transform;
   }
 
   .project-card{
@@ -426,7 +422,8 @@
      while scrolling and causes jank on phones. Hover effects also don't make
      sense on touch (they'd just stick after a tap), so drop both there. */
   @media (hover: none), (pointer: coarse){
-    .projects-carousel{ gap: 18px; }
+    .projects-carousel{ gap: 18px; cursor: default; }
+    .projects-track{ gap: 18px; }
     .card-visual .glow{ filter: blur(46px); opacity: .28; }
     .card-visual .dot{ display: none; }
     .project-card{ transition: border-color .3s ease; }
@@ -921,195 +918,163 @@
     });
   });
 
-  // Project carousel: continuously drifts sideways, plus arrow buttons + drag-to-scroll
+  // Project carousel: one unified implementation (desktop + mobile + iOS Safari).
+  //
+  // Why not native `scrollLeft`? iOS Safari can silently ignore or delay
+  // repainting a *native* scroll position when it's changed by JS instead of
+  // a real finger gesture, which made auto-drift unreliable on iPhone.
+  // Instead everything — auto-drift, arrow clicks, and drag/swipe — drives a
+  // single `offset` number that's applied as a `translate3d` transform on an
+  // inner track. There's only one source of truth, so nothing can fight it
+  // and nothing for iOS to drop.
+  //
+  // Dragging is handled with Pointer Events, which unify mouse, touch, and
+  // pen into one API and are what modern Safari/Chrome/Firefox/Edge all
+  // support. Horizontal panning is entirely custom (JS-driven transform), so
+  // `touch-action: pan-y` on the container tells the browser "only handle
+  // vertical gestures yourself" — the browser then leaves horizontal drags
+  // alone for JS to read while still scrolling the page natively on a
+  // vertical swipe. That's the standard, reliable way to get an
+  // iOS-Safari-safe horizontal drag without fighting the page scroll.
   try {
   const carousel = document.getElementById('projectsCarousel');
   const prevBtn = document.getElementById('carPrev');
   const nextBtn = document.getElementById('carNext');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   if(carousel){
-    const touchLike = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+    // Move the existing cards into a track we can transform, then duplicate
+    // the set once so the drift/drag can loop seamlessly forever.
+    const track = document.createElement('div');
+    track.className = 'projects-track';
 
-    const wrapScroll = () => {
-      const halfWidth = carousel.scrollWidth / 2;
-      if(!halfWidth) return;
-      const wrapped = ((carousel.scrollLeft % halfWidth) + halfWidth) % halfWidth;
-      if(Math.abs(wrapped - carousel.scrollLeft) > 0.5){
-        carousel.scrollLeft = wrapped;
-      }
-    };
+    const originalCards = Array.from(carousel.children);
+    originalCards.forEach(card => track.appendChild(card));
+    originalCards.forEach(card => {
+      const clone = card.cloneNode(true);
+      clone.setAttribute('aria-hidden', 'true');
+      clone.setAttribute('tabindex', '-1');
+      track.appendChild(clone);
+    });
+    carousel.appendChild(track);
 
-    if(touchLike){
-      // ---- Mobile / touch: transform-based drift + drag ----
-      // iOS Safari can silently ignore/delay repainting a *native* scroll
-      // position (scrollLeft) when it's changed by JS instead of a real
-      // finger gesture — so scrollLeft-driven auto-drift is unreliable there.
-      // Instead we drive a single `offset` value with a CSS transform on an
-      // inner track. Auto-drift (rAF) and manual dragging (touch handlers)
-      // both just update the same `offset` + transform, so there's no fight
-      // between "native scroll" and "JS scroll" and nothing for iOS to drop.
-      carousel.classList.add('mobile-marquee');
+    let half = 0;
+    function measure(){
+      half = track.scrollWidth / 2 || 1;
+    }
+    measure();
+    window.addEventListener('resize', measure);
+    window.addEventListener('load', measure);
+    // Web fonts can finish loading after first paint and change card sizes.
+    if(document.fonts && document.fonts.ready){
+      document.fonts.ready.then(measure).catch(() => {});
+    }
 
-      // Move existing cards into a track element we can transform, then
-      // duplicate the set once for a seamless loop.
-      const track = document.createElement('div');
-      track.className = 'projects-track';
-      track.style.gap = getComputedStyle(carousel).gap || '18px';
+    let offset = 0;
+    function applyOffset(){
+      offset = ((offset % half) + half) % half; // wrap for seamless infinite loop
+      track.style.transform = `translate3d(${-offset}px,0,0)`;
+    }
 
-      const originalCards = Array.from(carousel.children);
-      originalCards.forEach(card => track.appendChild(card));
-      originalCards.forEach(card => {
-        const clone = card.cloneNode(true);
-        clone.setAttribute('aria-hidden', 'true');
-        clone.setAttribute('tabindex', '-1');
-        track.appendChild(clone);
-      });
-      carousel.appendChild(track);
+    const SPEED = 0.7; // px per frame, steady auto-drift speed
+    let autoPaused = false;  // paused by hover / arrow click / a finished drag
+    let dragging = false;    // true only once a drag is confirmed horizontal
+    let resumeTimer = null;
 
-      let offset = 0;
-      let half = 0;
-      function measureHalf(){
-        half = track.scrollWidth / 2 || 1;
-      }
-      measureHalf();
-      window.addEventListener('resize', measureHalf);
-      window.addEventListener('load', measureHalf);
+    function pauseThenResume(delay){
+      autoPaused = true;
+      clearTimeout(resumeTimer);
+      resumeTimer = setTimeout(() => { autoPaused = false; }, delay);
+    }
 
-      function applyOffset(){
-        offset = ((offset % half) + half) % half;
-        track.style.transform = `translate3d(${-offset}px,0,0)`;
-      }
-
-      const SPEED = 0.8; // px per frame auto-drift speed
-      let paused = false;      // true while finger is down doing a horizontal drag
-      let resumeTimer = null;
-      let dragging = false;    // true once a touch is confirmed horizontal
-      let axisLocked = null;   // 'x' | 'y' | null, decided on first meaningful move
-      let startX = 0, startY = 0, startOffset = 0, moved = false;
-
-      carousel.addEventListener('touchstart', (e) => {
-        const t = e.touches[0];
-        startX = t.clientX; startY = t.clientY; startOffset = offset;
-        axisLocked = null; dragging = false; moved = false;
-        clearTimeout(resumeTimer);
-      }, { passive: true });
-
-      carousel.addEventListener('touchmove', (e) => {
-        const t = e.touches[0];
-        const dx = t.clientX - startX;
-        const dy = t.clientY - startY;
-
-        if(axisLocked === null){
-          if(Math.abs(dx) > 6 || Math.abs(dy) > 6){
-            axisLocked = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
-            if(axisLocked === 'x'){ dragging = true; paused = true; }
-          }
-        }
-
-        if(axisLocked === 'x'){
-          moved = true;
-          offset = startOffset - dx;
-          applyOffset();
-        }
-        // if axisLocked === 'y', do nothing and let the page scroll normally
-      }, { passive: true });
-
-      carousel.addEventListener('touchend', () => {
-        dragging = false;
-        if(axisLocked === 'x'){
-          resumeTimer = setTimeout(() => { paused = false; }, 1400);
-        } else {
-          paused = false;
-        }
-      });
-
-      // Prevent a drag from also firing the card's link navigation
-      carousel.addEventListener('click', (e) => {
-        if(moved){ e.preventDefault(); moved = false; }
-      }, true);
-
-      function driftMobile(){
-        if(!paused && !dragging){
+    if(!reduceMotion){
+      (function drift(){
+        if(!autoPaused && !dragging){
           offset += SPEED;
           applyOffset();
         }
-        requestAnimationFrame(driftMobile);
-      }
-      requestAnimationFrame(driftMobile);
-
-    } else {
-      // Duplicate the card set once so the drift can loop seamlessly
-      const originalCards = Array.from(carousel.children);
-      originalCards.forEach(card => {
-        const clone = card.cloneNode(true);
-        clone.setAttribute('aria-hidden', 'true');
-        clone.setAttribute('tabindex', '-1');
-        carousel.appendChild(clone);
-      });
-
-      let halfWidth = 0;
-      function measure(){
-        halfWidth = carousel.scrollWidth / 2;
-      }
-      measure();
-      window.addEventListener('resize', measure);
-      window.addEventListener('load', measure);
-
-      const scrollStep = () => (carousel.querySelector('.project-card')?.offsetWidth || 340) + 28;
-
-      let autoPaused = false;
-      let isDown = false, startX = 0, startScroll = 0, moved = false;
-      const SPEED = 0.7; // px per frame — steady, clearly visible auto-scroll
-
-      function tick(){
-        if(!autoPaused && !isDown){
-          carousel.scrollLeft += SPEED;
-          wrapScroll();
-        }
-        requestAnimationFrame(tick);
-      }
-      requestAnimationFrame(tick);
-
-      carousel.addEventListener('mouseenter', () => { autoPaused = true; });
-      carousel.addEventListener('mouseleave', () => { autoPaused = false; });
-
-      prevBtn?.addEventListener('click', () => {
-        autoPaused = true;
-        carousel.scrollLeft -= scrollStep();
-        wrapScroll();
-        setTimeout(() => autoPaused = false, 1600);
-      });
-      nextBtn?.addEventListener('click', () => {
-        autoPaused = true;
-        carousel.scrollLeft += scrollStep();
-        wrapScroll();
-        setTimeout(() => autoPaused = false, 1600);
-      });
-
-      // Drag-to-scroll for mouse users
-      carousel.addEventListener('mousedown', (e) => {
-        isDown = true; moved = false; autoPaused = true;
-        carousel.classList.add('dragging');
-        startX = e.pageX;
-        startScroll = carousel.scrollLeft;
-      });
-      window.addEventListener('mouseup', () => {
-        isDown = false;
-        carousel.classList.remove('dragging');
-        setTimeout(() => autoPaused = false, 800);
-      });
-      window.addEventListener('mouseleave', () => { isDown = false; carousel.classList.remove('dragging'); });
-      window.addEventListener('mousemove', (e) => {
-        if(!isDown) return;
-        const dx = e.pageX - startX;
-        if(Math.abs(dx) > 4) moved = true;
-        let next = startScroll - dx;
-        carousel.scrollLeft = next;
-        wrapScroll();
-      });
-      // Prevent the click-through to a card link after an actual drag
-      carousel.addEventListener('click', (e) => { if(moved){ e.preventDefault(); moved = false; } }, true);
+        requestAnimationFrame(drift);
+      })();
     }
+
+    // Pause while a mouse is hovering (desktop only — touch has no hover).
+    carousel.addEventListener('mouseenter', () => { if(!dragging) autoPaused = true; });
+    carousel.addEventListener('mouseleave', () => { if(!dragging){ clearTimeout(resumeTimer); autoPaused = false; } });
+
+    // ---- Arrow buttons: step by one card width, smoothly ----
+    const cardStep = () => (carousel.querySelector('.project-card')?.offsetWidth || 340) + 28;
+    function jump(delta){
+      pauseThenResume(1600);
+      track.style.transition = 'transform .5s cubic-bezier(.22,1,.36,1)';
+      offset += delta;
+      applyOffset();
+      window.setTimeout(() => { track.style.transition = ''; }, 520);
+    }
+    prevBtn?.addEventListener('click', () => jump(-cardStep()));
+    nextBtn?.addEventListener('click', () => jump(cardStep()));
+
+    // ---- Unified drag/swipe via Pointer Events (mouse + touch + pen) ----
+    let pointerId = null;
+    let axisLocked = null; // 'x' | 'y' | null until the gesture direction is known
+    let startX = 0, startY = 0, startOffset = 0, moved = false;
+    const AXIS_THRESHOLD = 6; // px of movement before committing to an axis
+
+    carousel.addEventListener('pointerdown', (e) => {
+      if(e.pointerType === 'mouse' && e.button !== 0) return; // left click only
+      pointerId = e.pointerId;
+      startX = e.clientX; startY = e.clientY; startOffset = offset;
+      axisLocked = null; moved = false;
+      clearTimeout(resumeTimer);
+    });
+
+    carousel.addEventListener('pointermove', (e) => {
+      if(e.pointerId !== pointerId) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+
+      if(axisLocked === null){
+        if(Math.abs(dx) > AXIS_THRESHOLD || Math.abs(dy) > AXIS_THRESHOLD){
+          axisLocked = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+          if(axisLocked === 'x'){
+            dragging = true;
+            carousel.classList.add('dragging');
+            // Pointer capture keeps delivering move events to this element
+            // even if the finger/cursor leaves it mid-drag (iOS Safari
+            // needs this for a smooth, uninterrupted swipe).
+            try{ carousel.setPointerCapture(pointerId); }catch(err){}
+          } else {
+            // Vertical intent — stop tracking, let the page scroll natively.
+            pointerId = null;
+          }
+        }
+      }
+
+      if(axisLocked === 'x'){
+        moved = true;
+        offset = startOffset - dx;
+        applyOffset();
+      }
+    });
+
+    function endDrag(e){
+      if(pointerId === null || (e && e.pointerId !== pointerId)) return;
+      if(dragging){
+        try{ carousel.releasePointerCapture(pointerId); }catch(err){}
+        carousel.classList.remove('dragging');
+        pauseThenResume(1400);
+      }
+      dragging = false;
+      pointerId = null;
+      axisLocked = null;
+    }
+    carousel.addEventListener('pointerup', endDrag);
+    carousel.addEventListener('pointercancel', endDrag);
+    carousel.addEventListener('pointerleave', (e) => { if(!dragging) endDrag(e); });
+
+    // Prevent the click-through to a card link right after an actual drag.
+    carousel.addEventListener('click', (e) => {
+      if(moved){ e.preventDefault(); moved = false; }
+    }, true);
   }
   } catch(err){
     console.error('Project carousel setup failed, continuing without it:', err);
