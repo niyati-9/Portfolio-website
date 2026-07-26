@@ -931,14 +931,13 @@
 
       const scrollStep = () => (carousel.querySelector('.project-card')?.offsetWidth || 340) + 18;
 
-      const SPEED = 0.55;
+      const SPEED = 0.8;
+      carousel.style.scrollBehavior = 'auto';
 
-      function tick(){
-        carousel.scrollLeft += SPEED;
+      setInterval(() => {
+        carousel.scrollBy({ left: SPEED, top: 0, behavior: 'auto' });
         wrapScroll();
-        requestAnimationFrame(tick);
-      }
-      requestAnimationFrame(tick);
+      }, 16);
     } else {
       // Duplicate the card set once so the drift can loop seamlessly
       const originalCards = Array.from(carousel.children);
