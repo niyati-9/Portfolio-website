@@ -337,6 +337,13 @@
     display:flex; flex-direction:column;
     transition: transform .5s cubic-bezier(.22,1,.36,1), box-shadow .5s ease, border-color .4s ease;
     position: relative;
+    /* iOS Safari treats links/text as "draggable" content and will start its
+       own native drag/callout gesture on a press-and-move or long-press,
+       which hijacks the touch sequence before our Pointer Events can see a
+       horizontal swipe. Disabling both stops iOS from intercepting the
+       gesture so manual dragging works. */
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
   }
   .project-card:hover{
     transform: translateY(-10px);
@@ -420,7 +427,10 @@
 
   /* Touch devices: the always-on blur() on card glows is expensive to paint
      while scrolling and causes jank on phones. Hover effects also don't make
-     sense on touch (they'd just stick after a tap), so drop both there. */
+     sense on touch (they'd just stick after a tap), so drop both there.
+     Tap-driven feedback instead comes from :active / :focus-visible below —
+     note that iOS Safari only triggers :active at all once a touchstart
+     listener exists somewhere on the page (see the JS fix). */
   @media (hover: none), (pointer: coarse){
     .projects-carousel{ gap: 18px; cursor: default; }
     .projects-track{ gap: 18px; }
@@ -661,7 +671,7 @@
 
   <div class="projects-carousel reveal" id="projectsCarousel">
 
-    <a href="https://github.com/nischalp001/smart_cart" class="project-card" target="_blank" rel="noopener noreferrer">
+    <a href="https://github.com/nischalp001/smart_cart" class="project-card" target="_blank" rel="noopener noreferrer" draggable="false">
       <div class="card-visual cv-dark">
         <span class="card-num">(01)</span>
         <div class="glow"></div>
@@ -678,7 +688,7 @@
       </div>
     </a>
 
-    <a href="https://github.com/niyati-9/Attendance" class="project-card" target="_blank" rel="noopener noreferrer">
+    <a href="https://github.com/niyati-9/Attendance" class="project-card" target="_blank" rel="noopener noreferrer" draggable="false">
       <div class="card-visual cv-mint">
         <span class="card-num">(02)</span>
         <div class="glow"></div>
@@ -695,7 +705,7 @@
       </div>
     </a>
 
-    <a href="https://github.com/niyati-9/CapstoneProject" class="project-card" target="_blank" rel="noopener noreferrer">
+    <a href="https://github.com/niyati-9/CapstoneProject" class="project-card" target="_blank" rel="noopener noreferrer" draggable="false">
       <div class="card-visual cv-cream">
         <span class="card-num">(03)</span>
         <div class="glow"></div>
@@ -712,7 +722,7 @@
       </div>
     </a>
 
-    <a href="https://github.com/niyati-9/MechanicSathi/tree/main/week7app" class="project-card" target="_blank" rel="noopener noreferrer">
+    <a href="https://github.com/niyati-9/MechanicSathi/tree/main/week7app" class="project-card" target="_blank" rel="noopener noreferrer" draggable="false">
       <div class="card-visual cv-charcoal">
         <span class="card-num">(04)</span>
         <div class="glow"></div>
@@ -729,7 +739,7 @@
       </div>
     </a>
 
-    <a href="https://github.com/niyati-9/week8finalproject" class="project-card" target="_blank" rel="noopener noreferrer">
+    <a href="https://github.com/niyati-9/week8finalproject" class="project-card" target="_blank" rel="noopener noreferrer" draggable="false">
       <div class="card-visual cv-sand">
         <span class="card-num">(05)</span>
         <div class="glow"></div>
@@ -852,6 +862,13 @@
 <footer class="copyright">(© 2026 NIYATI MALLA) · <a href="/blog/">Blog</a> · <a href="/sitemap.xml">Sitemap</a></footer>
 
 <script>
+  // iOS Safari quirk fix #1: the :active pseudo-class (used to fake "hover"
+  // on tap, see the (hover:none) media query above) is only ever triggered
+  // on iOS if a touchstart listener exists somewhere on the page. Without
+  // this, tapping a card on iPhone never shows the glow/glyph feedback at
+  // all — this single listener is what makes it work.
+  document.addEventListener('touchstart', function(){}, { passive: true });
+
   // Header background on scroll
   const header = document.getElementById('siteHeader');
   window.addEventListener('scroll', () => {
@@ -941,6 +958,12 @@
   const prevBtn = document.getElementById('carPrev');
   const nextBtn = document.getElementById('carNext');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Only real mouse/trackpad devices get hover-to-pause. iOS Safari fires a
+  // *synthetic* mouseenter (with no matching mouseleave) the first time you
+  // tap a link, as part of its legacy hover emulation — without this guard
+  // that single tap would set autoPaused = true forever and the auto-drift
+  // would look permanently "stuck" on iPhone after the first touch.
+  const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   if(carousel){
     // Move the existing cards into a track we can transform, then duplicate
@@ -996,8 +1019,10 @@
     })();
 
     // Pause while a mouse is hovering (desktop only — touch has no hover).
-    carousel.addEventListener('mouseenter', () => { if(!dragging) autoPaused = true; });
-    carousel.addEventListener('mouseleave', () => { if(!dragging){ clearTimeout(resumeTimer); autoPaused = false; } });
+    if(canHover){
+      carousel.addEventListener('mouseenter', () => { if(!dragging) autoPaused = true; });
+      carousel.addEventListener('mouseleave', () => { if(!dragging){ clearTimeout(resumeTimer); autoPaused = false; } });
+    }
 
     // ---- Arrow buttons: step by one card width, smoothly ----
     const cardStep = () => (carousel.querySelector('.project-card')?.offsetWidth || 340) + 28;
@@ -1051,6 +1076,11 @@
         moved = true;
         offset = startOffset - dx;
         applyOffset();
+        // Once we've committed to a horizontal drag, stop iOS Safari from
+        // doing anything else with the touch (like starting its own link
+        // drag/callout gesture), which would otherwise cancel our pointer
+        // sequence mid-swipe.
+        if(e.cancelable) e.preventDefault();
       }
     });
 
