@@ -318,7 +318,6 @@
     display:flex; gap: 28px;
     overflow-x: auto; overflow-y: hidden;
     padding: 4px 48px 64px;
-    -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -999,9 +998,18 @@
 
     (function drift(){
       if(!autoPaused){
-        carousel.scrollLeft += SPEED;
-        if(half > 0 && carousel.scrollLeft >= half){
-          carousel.scrollLeft -= half; // wrap for seamless infinite loop
+        // Use scrollBy/scrollTo rather than assigning to `.scrollLeft`
+        // directly. On iOS, an overflow-scroll element is handed off to its
+        // own native scrolling layer, and that layer can silently ignore or
+        // defer a plain `.scrollLeft = ...` write until the user actually
+        // touches the element — which is why the drift moved in desktop
+        // testing but not on a real iPhone. Going through scrollBy/scrollTo
+        // routes the change through the same API a real scroll gesture
+        // uses, so iOS repaints it immediately every time, touch or not.
+        if(half > 0 && carousel.scrollLeft + SPEED >= half){
+          carousel.scrollTo({ left: (carousel.scrollLeft + SPEED) - half });
+        } else {
+          carousel.scrollBy({ left: SPEED });
         }
       }
       requestAnimationFrame(drift);
@@ -1060,7 +1068,7 @@
         const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
         let next = start + delta * eased;
         if(half > 0){ next = ((next % half) + half) % half; }
-        carousel.scrollLeft = next;
+        carousel.scrollTo({ left: next });
         if(p < 1) requestAnimationFrame(tick);
       }
       requestAnimationFrame(tick);
