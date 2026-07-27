@@ -957,11 +957,15 @@
 
     let half = 0;
     function measure(){
-      half = (track.scrollWidth / 2) || 1;
+      // offsetWidth first: on some mobile loads scrollWidth briefly
+      // reports the pre-layout size (including clones) before CSS has
+      // fully applied, which throws off the loop point.
+      half = (track.offsetWidth / 2) || (track.scrollWidth / 2) || 1;
     }
     measure();
     window.addEventListener('resize', measure);
     window.addEventListener('load', measure);
+    setTimeout(measure, 1000); // catch late web-font/layout shifts on slow mobile loads
     if(document.fonts && document.fonts.ready){
       document.fonts.ready.then(measure).catch(() => {});
     }
@@ -980,7 +984,12 @@
     // actually starts moving anything.
     function foldDriftIntoScroll(){
       if(driftOffset !== 0){
+        // Guard against any inherited/future smooth-scroll behavior
+        // turning this hand-off into a visible animated snap.
+        const prevBehavior = carousel.style.scrollBehavior;
+        carousel.style.scrollBehavior = 'auto';
         carousel.scrollLeft = carousel.scrollLeft - driftOffset;
+        carousel.style.scrollBehavior = prevBehavior;
         driftOffset = 0;
         applyTransform();
       }
@@ -1034,7 +1043,8 @@
     carousel.addEventListener('pointercancel', endInteraction);
     carousel.addEventListener('pointerleave', (e) => { if(mouseDrag) endInteraction(e); });
     carousel.addEventListener('wheel', () => { foldDriftIntoScroll(); pauseThenResume(1600); }, { passive: true });
-    carousel.addEventListener('touchstart', () => { foldDriftIntoScroll(); }, { passive: true });
+    carousel.addEventListener('touchstart', () => { autoPaused = true; clearTimeout(resumeTimer); foldDriftIntoScroll(); }, { passive: true });
+    carousel.addEventListener('touchend', () => pauseThenResume(1600), { passive: true });
 
     const cardStep = () => (carousel.querySelector('.project-card')?.offsetWidth || 340) + 28;
     function animateScrollBy(delta, duration = 500){
