@@ -332,6 +332,21 @@
     will-change: transform;
   }
 
+  @keyframes carousel-marquee{
+    from{ transform: translate3d(0,0,0); }
+    to{ transform: translate3d(-50%,0,0); }
+  }
+
+  .projects-track.touch-marquee{
+    animation: carousel-marquee var(--marquee-duration, 28s) linear infinite;
+    transform: translate3d(0,0,0);
+    transform-origin: left center;
+  }
+
+  .projects-track.touch-marquee.is-paused{
+    animation-play-state: paused;
+  }
+
   .project-card{
     flex: 0 0 clamp(270px, 30vw, 355px);
     background: var(--bg);
@@ -940,6 +955,7 @@
   const nextBtn = document.getElementById('carNext');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const touchLike = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 
   if(carousel){
     const track = document.createElement('div');
@@ -970,99 +986,126 @@
       document.fonts.ready.then(measure).catch(() => {});
     }
 
-    const SPEED = reduceMotion ? 0.45 : 0.7; // px per frame
-    let autoPaused = false;
-    let resumeTimer = null;
-    let driftOffset = 0; // transform-based auto-drift amount, always <= 0
+    if(touchLike){
+      track.classList.add('touch-marquee');
+      track.style.setProperty('--marquee-duration', reduceMotion ? '42s' : '28s');
 
-    function applyTransform(){
-      track.style.transform = `translate3d(${driftOffset}px,0,0)`;
-    }
+      let resumeTimer = null;
+      const pauseMarquee = () => {
+        track.classList.add('is-paused');
+        clearTimeout(resumeTimer);
+      };
+      const resumeMarquee = (delay = 1200) => {
+        clearTimeout(resumeTimer);
+        resumeTimer = setTimeout(() => { track.classList.remove('is-paused'); }, delay);
+      };
 
-    // Hand control from the transform-based auto-drift over to native
-    // scrollLeft with zero visual jump, right before the user's gesture
-    // actually starts moving anything.
-    function foldDriftIntoScroll(){
-      if(driftOffset !== 0){
-        // Guard against any inherited/future smooth-scroll behavior
-        // turning this hand-off into a visible animated snap.
-        const prevBehavior = carousel.style.scrollBehavior;
-        carousel.style.scrollBehavior = 'auto';
-        carousel.scrollLeft = carousel.scrollLeft - driftOffset;
-        carousel.style.scrollBehavior = prevBehavior;
-        driftOffset = 0;
-        applyTransform();
+      carousel.addEventListener('touchstart', pauseMarquee, { passive: true });
+      carousel.addEventListener('touchend', () => resumeMarquee(900), { passive: true });
+      carousel.addEventListener('touchcancel', () => resumeMarquee(900), { passive: true });
+      carousel.addEventListener('pointerdown', (e) => {
+        if(e.pointerType !== 'mouse') pauseMarquee();
+      }, { passive: true });
+      carousel.addEventListener('pointerup', () => resumeMarquee(900), { passive: true });
+      carousel.addEventListener('pointercancel', () => resumeMarquee(900), { passive: true });
+      carousel.addEventListener('wheel', () => pauseMarquee(), { passive: true });
+      carousel.addEventListener('mouseenter', pauseMarquee);
+      carousel.addEventListener('mouseleave', () => resumeMarquee(400));
+    } else {
+      const SPEED = reduceMotion ? 0.45 : 0.7; // px per frame
+      let autoPaused = false;
+      let resumeTimer = null;
+      let driftOffset = 0; // transform-based auto-drift amount, always <= 0
+
+      function applyTransform(){
+        track.style.transform = `translate3d(${driftOffset}px,0,0)`;
       }
-    }
 
-    function pauseThenResume(delay){
-      autoPaused = true;
-      clearTimeout(resumeTimer);
-      resumeTimer = setTimeout(() => { autoPaused = false; }, delay);
-    }
+      // Hand control from the transform-based auto-drift over to native
+      // scrollLeft with zero visual jump, right before the user's gesture
+      // actually starts moving anything.
+      function foldDriftIntoScroll(){
+        if(driftOffset !== 0){
+          // Guard against any inherited/future smooth-scroll behavior
+          // turning this hand-off into a visible animated snap.
+          const prevBehavior = carousel.style.scrollBehavior;
+          carousel.style.scrollBehavior = 'auto';
+          carousel.scrollLeft = carousel.scrollLeft - driftOffset;
+          carousel.style.scrollBehavior = prevBehavior;
+          driftOffset = 0;
+          applyTransform();
+        }
+      }
 
-    (function drift(){
-      if(!autoPaused && half > 0){
-        driftOffset -= SPEED;
-        if(driftOffset <= -half){ driftOffset += half; }
-        applyTransform();
+      function pauseThenResume(delay){
+        autoPaused = true;
+        clearTimeout(resumeTimer);
+        resumeTimer = setTimeout(() => { autoPaused = false; }, delay);
       }
-      requestAnimationFrame(drift);
-    })();
 
-    if(canHover){
-      carousel.addEventListener('mouseenter', () => { autoPaused = true; clearTimeout(resumeTimer); });
-      carousel.addEventListener('mouseleave', () => { clearTimeout(resumeTimer); autoPaused = false; });
-    }
+      (function drift(){
+        if(!autoPaused && half > 0){
+          driftOffset -= SPEED;
+          if(driftOffset <= -half){ driftOffset += half; }
+          applyTransform();
+        }
+        requestAnimationFrame(drift);
+      })();
 
-    let mouseDrag = null;
-    carousel.addEventListener('pointerdown', (e) => {
-      autoPaused = true;
-      clearTimeout(resumeTimer);
-      foldDriftIntoScroll();
-      if(e.pointerType === 'mouse'){
-        mouseDrag = { startX: e.clientX, startScroll: carousel.scrollLeft, id: e.pointerId };
-        carousel.classList.add('dragging');
-        try{ carousel.setPointerCapture(e.pointerId); }catch(err){}
+      if(canHover){
+        carousel.addEventListener('mouseenter', () => { autoPaused = true; clearTimeout(resumeTimer); });
+        carousel.addEventListener('mouseleave', () => { clearTimeout(resumeTimer); autoPaused = false; });
       }
-    }, { passive: true });
-    carousel.addEventListener('pointermove', (e) => {
-      if(mouseDrag && e.pointerId === mouseDrag.id){
-        carousel.scrollLeft = mouseDrag.startScroll - (e.clientX - mouseDrag.startX);
-      }
-    });
-    function endInteraction(e){
-      if(mouseDrag && (!e || e.pointerId === mouseDrag.id)){
-        try{ carousel.releasePointerCapture(mouseDrag.id); }catch(err){}
-        carousel.classList.remove('dragging');
-        mouseDrag = null;
-      }
-      pauseThenResume(1600);
-    }
-    carousel.addEventListener('pointerup', endInteraction);
-    carousel.addEventListener('pointercancel', endInteraction);
-    carousel.addEventListener('pointerleave', (e) => { if(mouseDrag) endInteraction(e); });
-    carousel.addEventListener('wheel', () => { foldDriftIntoScroll(); pauseThenResume(1600); }, { passive: true });
-    carousel.addEventListener('touchstart', () => { autoPaused = true; clearTimeout(resumeTimer); foldDriftIntoScroll(); }, { passive: true });
-    carousel.addEventListener('touchend', () => pauseThenResume(1600), { passive: true });
 
-    const cardStep = () => (carousel.querySelector('.project-card')?.offsetWidth || 340) + 28;
-    function animateScrollBy(delta, duration = 500){
-      pauseThenResume(1800);
-      foldDriftIntoScroll();
-      const start = carousel.scrollLeft;
-      const startTime = performance.now();
-      function tick(now){
-        const p = Math.min(1, (now - startTime) / duration);
-        const eased = 1 - Math.pow(1 - p, 3);
-        let next = start + delta * eased;
-        carousel.scrollLeft = next;
-        if(p < 1) requestAnimationFrame(tick);
+      let mouseDrag = null;
+      carousel.addEventListener('pointerdown', (e) => {
+        autoPaused = true;
+        clearTimeout(resumeTimer);
+        foldDriftIntoScroll();
+        if(e.pointerType === 'mouse'){
+          mouseDrag = { startX: e.clientX, startScroll: carousel.scrollLeft, id: e.pointerId };
+          carousel.classList.add('dragging');
+          try{ carousel.setPointerCapture(e.pointerId); }catch(err){}
+        }
+      }, { passive: true });
+      carousel.addEventListener('pointermove', (e) => {
+        if(mouseDrag && e.pointerId === mouseDrag.id){
+          carousel.scrollLeft = mouseDrag.startScroll - (e.clientX - mouseDrag.startX);
+        }
+      });
+      function endInteraction(e){
+        if(mouseDrag && (!e || e.pointerId === mouseDrag.id)){
+          try{ carousel.releasePointerCapture(mouseDrag.id); }catch(err){}
+          carousel.classList.remove('dragging');
+          mouseDrag = null;
+        }
+        pauseThenResume(1600);
       }
-      requestAnimationFrame(tick);
+      carousel.addEventListener('pointerup', endInteraction);
+      carousel.addEventListener('pointercancel', endInteraction);
+      carousel.addEventListener('pointerleave', (e) => { if(mouseDrag) endInteraction(e); });
+      carousel.addEventListener('wheel', () => { foldDriftIntoScroll(); pauseThenResume(1600); }, { passive: true });
+      carousel.addEventListener('touchstart', () => { autoPaused = true; clearTimeout(resumeTimer); foldDriftIntoScroll(); }, { passive: true });
+      carousel.addEventListener('touchend', () => pauseThenResume(1600), { passive: true });
+
+      const cardStep = () => (carousel.querySelector('.project-card')?.offsetWidth || 340) + 28;
+      function animateScrollBy(delta, duration = 500){
+        pauseThenResume(1800);
+        foldDriftIntoScroll();
+        const start = carousel.scrollLeft;
+        const startTime = performance.now();
+        function tick(now){
+          const p = Math.min(1, (now - startTime) / duration);
+          const eased = 1 - Math.pow(1 - p, 3);
+          let next = start + delta * eased;
+          carousel.scrollLeft = next;
+          if(p < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      }
+      prevBtn?.addEventListener('click', () => animateScrollBy(-cardStep()));
+      nextBtn?.addEventListener('click', () => animateScrollBy(cardStep()));
     }
-    prevBtn?.addEventListener('click', () => animateScrollBy(-cardStep()));
-    nextBtn?.addEventListener('click', () => animateScrollBy(cardStep()));
   }
   } catch(err){
     console.error('Project carousel setup failed, continuing without it:', err);
