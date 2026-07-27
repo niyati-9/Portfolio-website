@@ -332,6 +332,15 @@
     will-change: transform;
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
+    animation: projectsMarquee 40s linear infinite;
+  }
+  @keyframes projectsMarquee{
+    from{ transform: translate3d(0,0,0); }
+    to{ transform: translate3d(-50%,0,0); }
+  }
+  .projects-track.paused{ animation-play-state: paused; }
+  @media (hover: hover) and (pointer: fine){
+    .projects-carousel:hover .projects-track{ animation-play-state: paused; }
   }
 
   .project-card{
@@ -917,17 +926,19 @@
     });
   });
 
-  // iOS Safari note: the auto-drift now runs as a genuine CSS @keyframes
-  // animation (compositor-driven), not a JS requestAnimationFrame loop that
-  // pokes a transform every frame. iOS's main thread can throttle/skip JS-driven
-  // transform updates in ways that never affect a real CSS animation, so this
-  // is the reliable way to get continuous motion on every iPhone/browser.
+  // The conveyor motion is a static CSS @keyframes animation (see
+  // .projects-track / @keyframes projectsMarquee in the stylesheet) that
+  // moves the track from 0 to -50% — since the track holds the original
+  // cards plus one exact clone set, -50% always lines up perfectly no
+  // matter the screen size or card widths. It needs zero JavaScript to
+  // run, so it can't be broken by iOS timing quirks, slow font loads, or
+  // any of the other things that trip up JS-driven animation loops. The
+  // script below only builds that doubled track and pauses/resumes the
+  // CSS animation on interaction.
   try {
   const carousel = document.getElementById('projectsCarousel');
   const prevBtn = document.getElementById('carPrev');
   const nextBtn = document.getElementById('carNext');
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   if(carousel){
     const track = document.createElement('div');
@@ -943,92 +954,28 @@
     });
     carousel.appendChild(track);
 
-    const keyframeStyle = document.createElement('style');
-    document.head.appendChild(keyframeStyle);
-
-    const SPEED = reduceMotion ? 26 : 42; // px per second
-    let half = 0;
-    let running = false;
     let resumeTimer = null;
-
-    // (Re)builds the @keyframes rule for the current track width and starts
-    // the animation fresh from offset 0. Called on load/resize/font-load and
-    // whenever we resume after an interaction.
-    function buildAnimation(){
-      half = (track.offsetWidth / 2) || (track.scrollWidth / 2) || 0;
-      if(half <= 0) return;
-      const duration = Math.max(half / SPEED, 4);
-      keyframeStyle.textContent =
-        '@keyframes projectsDrift{from{transform:translate3d(0,0,0);}to{transform:translate3d(' + (-half) + 'px,0,0);}}';
-      track.style.animation = 'projectsDrift ' + duration + 's linear infinite';
-      running = true;
-    }
-
-    buildAnimation();
-    window.addEventListener('resize', buildAnimation);
-    window.addEventListener('load', buildAnimation);
-    setTimeout(buildAnimation, 1000); // catch late web-font/layout shifts on slow mobile loads
-    if(document.fonts && document.fonts.ready){
-      document.fonts.ready.then(buildAnimation).catch(() => {});
-    }
-    if('ResizeObserver' in window){
-      const ro = new ResizeObserver(buildAnimation);
-      ro.observe(track);
-    }
-
-    function getCurrentTranslateX(){
-      const t = window.getComputedStyle(track).transform;
-      if(t === 'none') return 0;
-      if(t.indexOf('matrix3d(') === 0){
-        const p = t.slice(9, -1).split(',').map(Number);
-        return p[12] || 0;
-      }
-      if(t.indexOf('matrix(') === 0){
-        const p = t.slice(7, -1).split(',').map(Number);
-        return p[4] || 0;
-      }
-      return 0;
-    }
-
-    function pauseAnim(){
-      track.style.animationPlayState = 'paused';
-      running = false;
-    }
-
-    // Hand control from the CSS auto-drift over to native scrollLeft with
-    // zero visual jump, right before the user's gesture actually starts
-    // moving anything. Reads the animation's live computed position rather
-    // than tracking an offset variable ourselves.
-    function foldDriftIntoScroll(){
-      const tx = getCurrentTranslateX();
-      pauseAnim();
-      if(tx !== 0){
-        const prevBehavior = carousel.style.scrollBehavior;
-        carousel.style.scrollBehavior = 'auto';
-        carousel.scrollLeft = carousel.scrollLeft - tx;
-        carousel.style.scrollBehavior = prevBehavior;
-      }
-      // Reset so the next buildAnimation() call starts clean from offset 0.
-      track.style.animation = 'none';
-      void track.offsetHeight;
-    }
-
     function pauseThenResume(delay){
       clearTimeout(resumeTimer);
-      pauseAnim();
-      resumeTimer = setTimeout(buildAnimation, delay);
+      track.classList.add('paused');
+      resumeTimer = setTimeout(() => track.classList.remove('paused'), delay);
     }
 
-    if(canHover){
-      carousel.addEventListener('mouseenter', () => { clearTimeout(resumeTimer); pauseAnim(); });
-      carousel.addEventListener('mouseleave', () => { clearTimeout(resumeTimer); buildAnimation(); });
-    }
+    // Touch: pause while a finger is on the carousel so taps/swipes land
+    // predictably, then resume the conveyor a moment after release.
+    carousel.addEventListener('touchstart', () => { clearTimeout(resumeTimer); track.classList.add('paused'); }, { passive: true });
+    carousel.addEventListener('touchend', () => pauseThenResume(1500), { passive: true });
+    carousel.addEventListener('touchcancel', () => pauseThenResume(1500), { passive: true });
 
+    // Manual wheel/trackpad scroll or arrow-button use also pauses briefly.
+    carousel.addEventListener('wheel', () => pauseThenResume(1500), { passive: true });
+
+    // Desktop mouse click-and-drag panning.
     let mouseDrag = null;
     carousel.addEventListener('pointerdown', (e) => {
-      clearTimeout(resumeTimer);
-      foldDriftIntoScroll();
       if(e.pointerType === 'mouse'){
+        clearTimeout(resumeTimer);
+        track.classList.add('paused');
         mouseDrag = { startX: e.clientX, startScroll: carousel.scrollLeft, id: e.pointerId };
         carousel.classList.add('dragging');
         try{ carousel.setPointerCapture(e.pointerId); }catch(err){}
@@ -1039,38 +986,27 @@
         carousel.scrollLeft = mouseDrag.startScroll - (e.clientX - mouseDrag.startX);
       }
     });
-    function endInteraction(e){
+    function endMouseDrag(e){
       if(mouseDrag && (!e || e.pointerId === mouseDrag.id)){
         try{ carousel.releasePointerCapture(mouseDrag.id); }catch(err){}
         carousel.classList.remove('dragging');
         mouseDrag = null;
+        pauseThenResume(1500);
       }
-      pauseThenResume(1600);
     }
-    carousel.addEventListener('pointerup', endInteraction);
-    carousel.addEventListener('pointercancel', endInteraction);
-    carousel.addEventListener('pointerleave', (e) => { if(mouseDrag) endInteraction(e); });
-    carousel.addEventListener('wheel', () => { foldDriftIntoScroll(); pauseThenResume(1600); }, { passive: true });
-    carousel.addEventListener('touchstart', () => { clearTimeout(resumeTimer); foldDriftIntoScroll(); }, { passive: true });
-    carousel.addEventListener('touchend', () => pauseThenResume(1600), { passive: true });
-    carousel.addEventListener('touchcancel', () => pauseThenResume(1600), { passive: true });
-    carousel.addEventListener('scroll', () => {
-      if(running){
-        pauseThenResume(1200);
-      }
-    }, { passive: true });
+    carousel.addEventListener('pointerup', endMouseDrag);
+    carousel.addEventListener('pointercancel', endMouseDrag);
+    carousel.addEventListener('pointerleave', (e) => { if(mouseDrag) endMouseDrag(e); });
 
     const cardStep = () => (carousel.querySelector('.project-card')?.offsetWidth || 340) + 28;
     function animateScrollBy(delta, duration = 500){
       pauseThenResume(1800);
-      foldDriftIntoScroll();
       const start = carousel.scrollLeft;
       const startTime = performance.now();
       function tick(now){
         const p = Math.min(1, (now - startTime) / duration);
         const eased = 1 - Math.pow(1 - p, 3);
-        let next = start + delta * eased;
-        carousel.scrollLeft = next;
+        carousel.scrollLeft = start + delta * eased;
         if(p < 1) requestAnimationFrame(tick);
       }
       requestAnimationFrame(tick);
