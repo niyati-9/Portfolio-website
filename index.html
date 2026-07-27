@@ -310,10 +310,6 @@
   .work-nav button:disabled:hover{ background: var(--bg); color: var(--ink); border-color: var(--line); transform: none; }
 
   /* ---------- PROJECT CARD CAROUSEL ---------- */
-  /* Native scroll container: overflow-x:auto means manual dragging/swiping
-     is handled entirely by the browser's own touch-scrolling, which is
-     guaranteed to work identically on every platform including iOS Safari —
-     there is no custom JS in the loop that can fail or get hijacked. */
   .projects-carousel{
     display:flex; gap: 28px;
     overflow-x: auto; overflow-y: hidden;
@@ -321,6 +317,7 @@
     overscroll-behavior-x: contain;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
   }
   .projects-carousel::-webkit-scrollbar{ display: none; }
   @media (hover: hover) and (pointer: fine){
@@ -332,6 +329,7 @@
     display:flex;
     gap: 28px;
     width: max-content;
+    will-change: transform;
   }
 
   .project-card{
@@ -343,11 +341,6 @@
     display:flex; flex-direction:column;
     transition: transform .5s cubic-bezier(.22,1,.36,1), box-shadow .5s ease, border-color .4s ease;
     position: relative;
-    /* iOS Safari treats links/text as "draggable" content and will start its
-       own native drag/callout gesture on a press-and-move or long-press,
-       which hijacks the touch sequence before our Pointer Events can see a
-       horizontal swipe. Disabling both stops iOS from intercepting the
-       gesture so manual dragging works. */
     -webkit-user-drag: none;
     -webkit-touch-callout: none;
   }
@@ -431,12 +424,6 @@
   .card-view:hover{ border-color: var(--ink); gap: 12px; }
   .card-view:hover::after{ transform: translate(2px,-2px); }
 
-  /* Touch devices: the always-on blur() on card glows is expensive to paint
-     while scrolling and causes jank on phones. Hover effects also don't make
-     sense on touch (they'd just stick after a tap), so drop both there.
-     Tap-driven feedback instead comes from :active / :focus-visible below —
-     note that iOS Safari only triggers :active at all once a touchstart
-     listener exists somewhere on the page (see the JS fix). */
   @media (hover: none), (pointer: coarse){
     .projects-carousel{ gap: 18px; cursor: default; }
     .projects-track{ gap: 18px; }
@@ -850,7 +837,6 @@
         <label for="contactMessage">Your Message</label>
         <textarea id="contactMessage" name="message" placeholder="Hi, I'm looking for a designer for my website..." required></textarea>
       </div>
-      <!-- Sends the notification email to a fixed address regardless of who fills the form -->
       <input type="hidden" name="_replyto" value="">
       <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
       <div class="submit-row">
@@ -868,20 +854,13 @@
 <footer class="copyright">(© 2026 NIYATI MALLA) · <a href="/blog/">Blog</a> · <a href="/sitemap.xml">Sitemap</a></footer>
 
 <script>
-  // iOS Safari quirk fix #1: the :active pseudo-class (used to fake "hover"
-  // on tap, see the (hover:none) media query above) is only ever triggered
-  // on iOS if a touchstart listener exists somewhere on the page. Without
-  // this, tapping a card on iPhone never shows the glow/glyph feedback at
-  // all — this single listener is what makes it work.
   document.addEventListener('touchstart', function(){}, { passive: true });
 
-  // Header background on scroll
   const header = document.getElementById('siteHeader');
   window.addEventListener('scroll', () => {
     header.classList.toggle('scrolled', window.scrollY > 20);
   });
 
-  // Hamburger / mobile nav
   const hamburgerBtn = document.getElementById('hamburgerBtn');
   const mobileNav = document.getElementById('mobileNav');
 
@@ -913,9 +892,6 @@
     });
   });
 
-  // Scroll reveal — runs early and independently so a carousel issue can
-  // never prevent the rest of the page (hero, about, blog, contact) from
-  // becoming visible.
   const revealEls = document.querySelectorAll('.reveal');
   if('IntersectionObserver' in window){
     const io = new IntersectionObserver((entries) => {
@@ -928,11 +904,9 @@
     }, { threshold: 0.15 });
     revealEls.forEach(el => io.observe(el));
   } else {
-    // Fallback: no IntersectionObserver support — just show everything.
     revealEls.forEach(el => el.classList.add('in'));
   }
 
-  // Smooth anchor scroll (desktop nav)
   document.querySelectorAll('header nav a[href^="#"]').forEach(a => {
     a.addEventListener('click', (e) => {
       e.preventDefault();
@@ -941,16 +915,25 @@
     });
   });
 
-  // Project carousel: native-scroll implementation (desktop + mobile + iOS Safari).
+  // Project carousel.
   //
-  // Manual scrolling is plain `overflow-x: auto` on the container — the
-  // browser's own touch-scrolling handles every finger gesture, momentum,
-  // and bounce, so there's no custom drag code that can be hijacked or
-  // silently dropped by iOS Safari.
+  // iOS Safari hands overflow-x:auto elements off to its own native
+  // scrolling layer. Writing to `scrollLeft` / `scrollTo()` from a
+  // requestAnimationFrame loop that ISN'T driven by an actual touch
+  // gesture is well known to be silently ignored (or only applied once
+  // the user finally touches the element) on that native layer — that's
+  // why manual swipe and the desktop drift both work, but idle auto-drift
+  // never visibly moves on an iPhone.
   //
-  // Auto-drift and the arrow buttons both just move the *same* native
-  // `scrollLeft` property that a manual swipe would move, so nothing ever
-  // fights over two different sources of truth.
+  // Fix: drive the automatic drift with a CSS `transform: translateX()`
+  // on the track instead of touching scrollLeft at all. Transforms are
+  // always composited immediately regardless of which layer owns the
+  // scroll, so this works identically on iOS, Android, and desktop.
+  // Manual swipe/drag still goes through native scrollLeft exactly as
+  // before (that part already worked fine). The moment the user starts
+  // interacting, we fold the current transform offset into scrollLeft and
+  // zero out the transform, so control hands off invisibly to native
+  // scrolling with no jump; when they let go, auto-drift resumes from 0.
   try {
   const carousel = document.getElementById('projectsCarousel');
   const prevBtn = document.getElementById('carPrev');
@@ -959,8 +942,6 @@
   const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   if(carousel){
-    // Move the existing cards into a track, then duplicate the set once so
-    // scrolling can loop seamlessly forever.
     const track = document.createElement('div');
     track.className = 'projects-track';
 
@@ -976,19 +957,34 @@
 
     let half = 0;
     function measure(){
-      half = track.scrollWidth / 2 || 1;
+      half = (track.scrollWidth / 2) || 1;
     }
     measure();
     window.addEventListener('resize', measure);
     window.addEventListener('load', measure);
-    // Web fonts can finish loading after first paint and change card sizes.
     if(document.fonts && document.fonts.ready){
       document.fonts.ready.then(measure).catch(() => {});
     }
 
-    const SPEED = reduceMotion ? 0.45 : 0.7; // px per frame, steady auto-drift speed
+    const SPEED = reduceMotion ? 0.45 : 0.7; // px per frame
     let autoPaused = false;
     let resumeTimer = null;
+    let driftOffset = 0; // transform-based auto-drift amount, always <= 0
+
+    function applyTransform(){
+      track.style.transform = `translate3d(${driftOffset}px,0,0)`;
+    }
+
+    // Hand control from the transform-based auto-drift over to native
+    // scrollLeft with zero visual jump, right before the user's gesture
+    // actually starts moving anything.
+    function foldDriftIntoScroll(){
+      if(driftOffset !== 0){
+        carousel.scrollLeft = carousel.scrollLeft - driftOffset;
+        driftOffset = 0;
+        applyTransform();
+      }
+    }
 
     function pauseThenResume(delay){
       autoPaused = true;
@@ -997,48 +993,30 @@
     }
 
     (function drift(){
-      if(!autoPaused){
-        // Use scrollBy/scrollTo rather than assigning to `.scrollLeft`
-        // directly. On iOS, an overflow-scroll element is handed off to its
-        // own native scrolling layer, and that layer can silently ignore or
-        // defer a plain `.scrollLeft = ...` write until the user actually
-        // touches the element — which is why the drift moved in desktop
-        // testing but not on a real iPhone. Going through scrollBy/scrollTo
-        // routes the change through the same API a real scroll gesture
-        // uses, so iOS repaints it immediately every time, touch or not.
-        if(half > 0 && carousel.scrollLeft + SPEED >= half){
-          carousel.scrollTo({ left: (carousel.scrollLeft + SPEED) - half });
-        } else {
-          carousel.scrollBy({ left: SPEED });
-        }
+      if(!autoPaused && half > 0){
+        driftOffset -= SPEED;
+        if(driftOffset <= -half){ driftOffset += half; }
+        applyTransform();
       }
       requestAnimationFrame(drift);
     })();
 
-    // Pause on hover (desktop only — touch devices don't have real hover).
     if(canHover){
       carousel.addEventListener('mouseenter', () => { autoPaused = true; clearTimeout(resumeTimer); });
       carousel.addEventListener('mouseleave', () => { clearTimeout(resumeTimer); autoPaused = false; });
     }
 
-    // Pause the instant any pointer (mouse, touch, or pen) touches the
-    // strip, and resume a bit after it lets go — the extra delay covers
-    // iOS's momentum scroll, which keeps moving for a moment after the
-    // finger lifts.
     let mouseDrag = null;
     carousel.addEventListener('pointerdown', (e) => {
       autoPaused = true;
       clearTimeout(resumeTimer);
+      foldDriftIntoScroll();
       if(e.pointerType === 'mouse'){
-        // Desktop mice don't get native click-and-drag scrolling for free,
-        // so add it manually — this is plain, reliable scrollLeft
-        // manipulation on desktop (the iOS-specific scrollLeft quirks this
-        // rewrite works around don't apply to desktop browsers).
         mouseDrag = { startX: e.clientX, startScroll: carousel.scrollLeft, id: e.pointerId };
         carousel.classList.add('dragging');
         try{ carousel.setPointerCapture(e.pointerId); }catch(err){}
       }
-    });
+    }, { passive: true });
     carousel.addEventListener('pointermove', (e) => {
       if(mouseDrag && e.pointerId === mouseDrag.id){
         carousel.scrollLeft = mouseDrag.startScroll - (e.clientX - mouseDrag.startX);
@@ -1055,20 +1033,20 @@
     carousel.addEventListener('pointerup', endInteraction);
     carousel.addEventListener('pointercancel', endInteraction);
     carousel.addEventListener('pointerleave', (e) => { if(mouseDrag) endInteraction(e); });
-    carousel.addEventListener('wheel', () => pauseThenResume(1600), { passive: true });
+    carousel.addEventListener('wheel', () => { foldDriftIntoScroll(); pauseThenResume(1600); }, { passive: true });
+    carousel.addEventListener('touchstart', () => { foldDriftIntoScroll(); }, { passive: true });
 
-    // ---- Arrow buttons: hand-rolled smooth tween of scrollLeft ----
     const cardStep = () => (carousel.querySelector('.project-card')?.offsetWidth || 340) + 28;
     function animateScrollBy(delta, duration = 500){
       pauseThenResume(1800);
+      foldDriftIntoScroll();
       const start = carousel.scrollLeft;
       const startTime = performance.now();
       function tick(now){
         const p = Math.min(1, (now - startTime) / duration);
-        const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
+        const eased = 1 - Math.pow(1 - p, 3);
         let next = start + delta * eased;
-        if(half > 0){ next = ((next % half) + half) % half; }
-        carousel.scrollTo({ left: next });
+        carousel.scrollLeft = next;
         if(p < 1) requestAnimationFrame(tick);
       }
       requestAnimationFrame(tick);
@@ -1080,7 +1058,6 @@
     console.error('Project carousel setup failed, continuing without it:', err);
   }
 
-  // Contact form — sends real email via Formspree, without leaving the page
   const form = document.getElementById('contactForm');
   const statusEl = document.getElementById('formStatus');
 
@@ -1089,7 +1066,6 @@
     const btn = form.querySelector('.submit-btn');
     const original = btn.innerHTML;
 
-    // keep the reply-to address in sync with whatever the visitor typed
     form.querySelector('input[name="_replyto"]').value = form.querySelector('#contactEmail').value;
 
     btn.disabled = true;
