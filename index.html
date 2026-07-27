@@ -917,12 +917,11 @@
     });
   });
 
-  // iOS Safari note: we deliberately do NOT set -webkit-overflow-scrolling:touch
-  // on .projects-carousel (see CSS). That property hands the element to iOS's
-  // momentum-scroll compositing layer, which only repaints on real touch/scroll
-  // events and ignores repaints caused by JS-driven transforms on children —
-  // exactly what this auto-drift loop does. Without it, transform updates on
-  // .projects-track paint every frame on iOS same as desktop.
+  // iOS Safari note: the auto-drift now runs as a genuine CSS @keyframes
+  // animation (compositor-driven), not a JS requestAnimationFrame loop that
+  // pokes a transform every frame. iOS's main thread can throttle/skip JS-driven
+  // transform updates in ways that never affect a real CSS animation, so this
+  // is the reliable way to get continuous motion on every iPhone/browser.
   try {
   const carousel = document.getElementById('projectsCarousel');
   const prevBtn = document.getElementById('carPrev');
@@ -944,79 +943,89 @@
     });
     carousel.appendChild(track);
 
+    const keyframeStyle = document.createElement('style');
+    document.head.appendChild(keyframeStyle);
+
+    const SPEED = reduceMotion ? 26 : 42; // px per second
     let half = 0;
-    function measure(){
-      // offsetWidth first: on some mobile loads scrollWidth briefly
-      // reports the pre-layout size (including clones) before CSS has
-      // fully applied, which throws off the loop point.
-      half = (track.offsetWidth / 2) || (track.scrollWidth / 2) || 1;
+    let running = false;
+    let resumeTimer = null;
+
+    // (Re)builds the @keyframes rule for the current track width and starts
+    // the animation fresh from offset 0. Called on load/resize/font-load and
+    // whenever we resume after an interaction.
+    function buildAnimation(){
+      half = (track.offsetWidth / 2) || (track.scrollWidth / 2) || 0;
+      if(half <= 0) return;
+      const duration = Math.max(half / SPEED, 4);
+      keyframeStyle.textContent =
+        '@keyframes projectsDrift{from{transform:translate3d(0,0,0);}to{transform:translate3d(' + (-half) + 'px,0,0);}}';
+      track.style.animation = 'projectsDrift ' + duration + 's linear infinite';
+      running = true;
     }
-    measure();
-    window.addEventListener('resize', measure);
-    window.addEventListener('load', measure);
-    setTimeout(measure, 1000); // catch late web-font/layout shifts on slow mobile loads
+
+    buildAnimation();
+    window.addEventListener('resize', buildAnimation);
+    window.addEventListener('load', buildAnimation);
+    setTimeout(buildAnimation, 1000); // catch late web-font/layout shifts on slow mobile loads
     if(document.fonts && document.fonts.ready){
-      document.fonts.ready.then(measure).catch(() => {});
+      document.fonts.ready.then(buildAnimation).catch(() => {});
     }
     if('ResizeObserver' in window){
-      const ro = new ResizeObserver(measure);
+      const ro = new ResizeObserver(buildAnimation);
       ro.observe(track);
     }
 
-    const SPEED = reduceMotion ? 0.45 : 0.7; // px per frame
-    let autoPaused = false;
-    let resumeTimer = null;
-    let driftOffset = 0; // transform-based auto-drift amount, always <= 0
+    function getCurrentTranslateX(){
+      const t = window.getComputedStyle(track).transform;
+      if(t === 'none') return 0;
+      if(t.indexOf('matrix3d(') === 0){
+        const p = t.slice(9, -1).split(',').map(Number);
+        return p[12] || 0;
+      }
+      if(t.indexOf('matrix(') === 0){
+        const p = t.slice(7, -1).split(',').map(Number);
+        return p[4] || 0;
+      }
+      return 0;
+    }
 
-    function applyTransform(){
-      const tx = `${driftOffset}px`;
-      track.style.transform = `translate3d(${tx},0,0)`;
-      track.style.webkitTransform = `translate3d(${tx},0,0)`;
-      // Force a synchronous layout read so iOS Safari repaints this frame
-      // instead of potentially deferring/batching the visual update.
+    function pauseAnim(){
+      track.style.animationPlayState = 'paused';
+      running = false;
+    }
+
+    // Hand control from the CSS auto-drift over to native scrollLeft with
+    // zero visual jump, right before the user's gesture actually starts
+    // moving anything. Reads the animation's live computed position rather
+    // than tracking an offset variable ourselves.
+    function foldDriftIntoScroll(){
+      const tx = getCurrentTranslateX();
+      pauseAnim();
+      if(tx !== 0){
+        const prevBehavior = carousel.style.scrollBehavior;
+        carousel.style.scrollBehavior = 'auto';
+        carousel.scrollLeft = carousel.scrollLeft - tx;
+        carousel.style.scrollBehavior = prevBehavior;
+      }
+      // Reset so the next buildAnimation() call starts clean from offset 0.
+      track.style.animation = 'none';
       void track.offsetHeight;
     }
 
-    // Hand control from the transform-based auto-drift over to native
-    // scrollLeft with zero visual jump, right before the user's gesture
-    // actually starts moving anything.
-    function foldDriftIntoScroll(){
-      if(driftOffset !== 0){
-        // Guard against any inherited/future smooth-scroll behavior
-        // turning this hand-off into a visible animated snap.
-        const prevBehavior = carousel.style.scrollBehavior;
-        carousel.style.scrollBehavior = 'auto';
-        carousel.scrollLeft = carousel.scrollLeft - driftOffset;
-        carousel.style.scrollBehavior = prevBehavior;
-        driftOffset = 0;
-        applyTransform();
-      }
-    }
-
     function pauseThenResume(delay){
-      autoPaused = true;
       clearTimeout(resumeTimer);
-      resumeTimer = setTimeout(() => { autoPaused = false; }, delay);
+      pauseAnim();
+      resumeTimer = setTimeout(buildAnimation, delay);
     }
-
-    function drift(){
-      if(!autoPaused && half > 0){
-        driftOffset -= SPEED;
-        if(driftOffset <= -half){ driftOffset += half; }
-        applyTransform();
-      }
-      requestAnimationFrame(drift);
-    }
-    requestAnimationFrame(drift);
 
     if(canHover){
-      carousel.addEventListener('mouseenter', () => { autoPaused = true; clearTimeout(resumeTimer); });
-      carousel.addEventListener('mouseleave', () => { clearTimeout(resumeTimer); autoPaused = false; });
+      carousel.addEventListener('mouseenter', () => { clearTimeout(resumeTimer); pauseAnim(); });
+      carousel.addEventListener('mouseleave', () => { clearTimeout(resumeTimer); buildAnimation(); });
     }
 
     let mouseDrag = null;
     carousel.addEventListener('pointerdown', (e) => {
-      autoPaused = true;
       clearTimeout(resumeTimer);
       foldDriftIntoScroll();
       if(e.pointerType === 'mouse'){
@@ -1042,11 +1051,11 @@
     carousel.addEventListener('pointercancel', endInteraction);
     carousel.addEventListener('pointerleave', (e) => { if(mouseDrag) endInteraction(e); });
     carousel.addEventListener('wheel', () => { foldDriftIntoScroll(); pauseThenResume(1600); }, { passive: true });
-    carousel.addEventListener('touchstart', () => { autoPaused = true; clearTimeout(resumeTimer); foldDriftIntoScroll(); }, { passive: true });
+    carousel.addEventListener('touchstart', () => { clearTimeout(resumeTimer); foldDriftIntoScroll(); }, { passive: true });
     carousel.addEventListener('touchend', () => pauseThenResume(1600), { passive: true });
     carousel.addEventListener('touchcancel', () => pauseThenResume(1600), { passive: true });
     carousel.addEventListener('scroll', () => {
-      if(!autoPaused && driftOffset === 0){
+      if(running){
         pauseThenResume(1200);
       }
     }, { passive: true });
