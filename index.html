@@ -954,28 +954,44 @@
     });
     carousel.appendChild(track);
 
+    // Single source of truth for pause/resume: the browser's own 'scroll'
+    // event fires for every kind of manual movement — touch drag, momentum
+    // scrolling after you lift your finger, trackpad/wheel, mouse-drag, and
+    // the arrow buttons — so debouncing off that one event (instead of
+    // juggling touchstart/touchend/wheel separately) reliably stays paused
+    // for the *entire* momentum glide, not just while your finger is down.
+    // will-change is also dropped to 'auto' while interacting: keeping a
+    // large always-promoted GPU layer active during a scroll gesture is
+    // itself a common cause of scroll jank on older devices.
     let resumeTimer = null;
+    function setRunning(on){
+      if(on){
+        track.style.willChange = 'transform';
+        track.style.animationPlayState = 'running';
+      } else {
+        track.style.animationPlayState = 'paused';
+        track.style.willChange = 'auto';
+      }
+    }
     function pauseThenResume(delay){
       clearTimeout(resumeTimer);
-      track.classList.add('paused');
-      resumeTimer = setTimeout(() => track.classList.remove('paused'), delay);
+      setRunning(false);
+      resumeTimer = setTimeout(() => setRunning(true), delay);
     }
 
-    // Touch: pause while a finger is on the carousel so taps/swipes land
-    // predictably, then resume the conveyor a moment after release.
-    carousel.addEventListener('touchstart', () => { clearTimeout(resumeTimer); track.classList.add('paused'); }, { passive: true });
-    carousel.addEventListener('touchend', () => pauseThenResume(1500), { passive: true });
-    carousel.addEventListener('touchcancel', () => pauseThenResume(1500), { passive: true });
+    // Immediate pause the instant a finger/mouse touches down, so the very
+    // first pixel of movement feels responsive rather than waiting for a
+    // scroll event to land first.
+    carousel.addEventListener('touchstart', () => { clearTimeout(resumeTimer); setRunning(false); }, { passive: true });
+    carousel.addEventListener('pointerdown', () => { clearTimeout(resumeTimer); setRunning(false); }, { passive: true });
 
-    // Manual wheel/trackpad scroll or arrow-button use also pauses briefly.
-    carousel.addEventListener('wheel', () => pauseThenResume(1500), { passive: true });
+    // Catches every actual movement, including the momentum-scroll tail.
+    carousel.addEventListener('scroll', () => pauseThenResume(400), { passive: true });
 
     // Desktop mouse click-and-drag panning.
     let mouseDrag = null;
     carousel.addEventListener('pointerdown', (e) => {
       if(e.pointerType === 'mouse'){
-        clearTimeout(resumeTimer);
-        track.classList.add('paused');
         mouseDrag = { startX: e.clientX, startScroll: carousel.scrollLeft, id: e.pointerId };
         carousel.classList.add('dragging');
         try{ carousel.setPointerCapture(e.pointerId); }catch(err){}
@@ -991,7 +1007,6 @@
         try{ carousel.releasePointerCapture(mouseDrag.id); }catch(err){}
         carousel.classList.remove('dragging');
         mouseDrag = null;
-        pauseThenResume(1500);
       }
     }
     carousel.addEventListener('pointerup', endMouseDrag);
@@ -1000,7 +1015,6 @@
 
     const cardStep = () => (carousel.querySelector('.project-card')?.offsetWidth || 340) + 28;
     function animateScrollBy(delta, duration = 500){
-      pauseThenResume(1800);
       const start = carousel.scrollLeft;
       const startTime = performance.now();
       function tick(now){
