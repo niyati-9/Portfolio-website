@@ -317,7 +317,6 @@
     overscroll-behavior-x: contain;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    -webkit-overflow-scrolling: touch;
     touch-action: pan-x pinch-zoom;
   }
   .projects-carousel::-webkit-scrollbar{ display: none; }
@@ -918,10 +917,12 @@
     });
   });
 
-  // iOS Safari ignores programmatic scrollLeft updates outside a touch
-  // gesture, so auto-drift uses transform on the track for every device.
-  // Manual swipe still uses native scrollLeft; on interaction we fold the
-  // current transform offset into scrollLeft so control hands off cleanly.
+  // iOS Safari note: we deliberately do NOT set -webkit-overflow-scrolling:touch
+  // on .projects-carousel (see CSS). That property hands the element to iOS's
+  // momentum-scroll compositing layer, which only repaints on real touch/scroll
+  // events and ignores repaints caused by JS-driven transforms on children —
+  // exactly what this auto-drift loop does. Without it, transform updates on
+  // .projects-track paint every frame on iOS same as desktop.
   try {
   const carousel = document.getElementById('projectsCarousel');
   const prevBtn = document.getElementById('carPrev');
@@ -971,6 +972,9 @@
       const tx = `${driftOffset}px`;
       track.style.transform = `translate3d(${tx},0,0)`;
       track.style.webkitTransform = `translate3d(${tx},0,0)`;
+      // Force a synchronous layout read so iOS Safari repaints this frame
+      // instead of potentially deferring/batching the visual update.
+      void track.offsetHeight;
     }
 
     // Hand control from the transform-based auto-drift over to native
